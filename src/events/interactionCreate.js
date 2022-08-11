@@ -869,6 +869,11 @@ module.exports = async (client, interaction) => {
                         });
                     }
 
+                    await interaction.message.edit({
+                        components: [row],
+                        embeds: [interaction.message.embeds[0]]
+                    });
+
                     const anuncio = new Discord.MessageEmbed()
 
                         .setDescription(`<:Positivo:986323641836896316> *O anúncio do produto foi enviado com sucesso no canal:* <#${interaction.channel.id}>`)
