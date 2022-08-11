@@ -214,7 +214,12 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
-                                { label: `${item.nome} R$ ${item.valor}`, value: `showstock-${item._id}` }
+                                {
+                                    label: `${item.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${item.valor}`,
+                                    value: `${item._id}`,
+                                }
                             ))
                         ),
                 );
@@ -316,7 +321,12 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
-                                { label: `${item.nome} R$ ${item.valor}`, value: `${item._id}` }
+                                {
+                                    label: `${item.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${item.valor}`,
+                                    value: `${item._id}`,
+                                }
                             ))
                         ),
                 );
@@ -457,7 +467,12 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
-                                { label: `${item.nome} R$ ${item.valor}`, value: `${item._id}` }
+                                {
+                                    label: `${item.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${item.valor}`,
+                                    value: `${item._id}`,
+                                }
                             ))
                         )
                 );
@@ -542,8 +557,6 @@ module.exports = async (client, interaction) => {
                             .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
                             .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
                             .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
-
-
 
                         /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
                         const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
@@ -669,10 +682,14 @@ module.exports = async (client, interaction) => {
                     .setCustomId('menu_produtos')
                     .setPlaceholder('Selecionar um produto')
                     .addOptions(produtos
-                        .map(produto => ({
-                            label: `${produto.nome} R$${produto.valor}`,
-                            value: `${produto._id}`
-                        }))
+                        .map(produto => (
+                            {
+                                label: `${produto.nome}`,
+                                emoji: "📦",
+                                description: `Valor do produto: R$ ${produto.valor}`,
+                                value: `${produto._id}`,
+                            }
+                        ))
                     )
             )
 
@@ -763,12 +780,14 @@ module.exports = async (client, interaction) => {
                         .setCustomId('menu_produtos')
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(produtos
-                            .map(produto => ({
-
-                                label: `${produto.nome} R$${produto.valor}`,
-                                value: `${produto._id}`,
-                            })
-                            )
+                            .map(produto => (
+                                {
+                                    label: `${produto.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${produto.valor}`,
+                                    value: `${produto._id}`,
+                                }
+                            ))
                         )
                 );
 
@@ -1084,7 +1103,12 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
-                                { label: `${item.nome} R$ ${item.valor}`, value: `${item._id}` }
+                                {
+                                    label: `${item.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${item.valor}`,
+                                    value: `${item._id}`,
+                                }
                             ))
                         ),
                 );
@@ -1290,7 +1314,11 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um cupom:')
                         .addOptions(
                             itens.map(item => (
-                                { label: `${item.code}`, value: `codigo-${item.code}` }
+                                {
+                                    label: `${item.code}`,
+                                    emoji: "🏷️",
+                                    value: `codigo-${item.code}`
+                                }
                             ))
                         ),
                 );
@@ -1467,11 +1495,11 @@ module.exports = async (client, interaction) => {
                         .setPlaceholder('Selecione um produto:')
                         .addOptions(itens
                             .map(produto => ({
-
-                                label: `${produto.nome} R$${produto.valor}`,
+                                label: `${produto.nome}`,
+                                emoji: "📦",
+                                description: `Valor do produto: R$ ${produto.valor}`,
                                 value: `${produto._id}`,
-                            })
-                            )
+                            }))
                         )
                 );
 

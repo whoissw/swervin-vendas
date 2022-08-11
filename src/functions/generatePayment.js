@@ -163,11 +163,11 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 8 || pagamentoStatus === 'approved') {
+            if (tentativas >= 8 || pagamentoStatus !== 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus === 'approved') {
+                if (pagamentoStatus !== 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
@@ -249,7 +249,7 @@ const gerarPagamento = async (interaction) => {
                                 server_id: interaction.guildId,
                                 user_id: interaction.member.id
                             });
-                            await interaction.channel.setTopic(`<a:seta:986339267951362050> ID do Membro・${interaction.user.id}`);
+                            await interaction.channel.setTopic(`${interaction.user.id}`);
                             setTimeout(async () => {
                                 await interaction.channel.delete()
                             }, 5 * 60000)
@@ -279,7 +279,7 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus !== 'approved') {
+                } else if (pagamentoStatus === 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 
@@ -302,7 +302,7 @@ const gerarPagamento = async (interaction) => {
                     })
                 }
             }
-        }, 25000);
+        }, 5000);
     }
     catch (error) {
 
