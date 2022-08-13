@@ -13,15 +13,13 @@ module.exports = {
             .setTitle("Gerenciar Vendas")
             .setDescription(`***Seja Bem-Vindo ao painel de vendas***
             
-            *Para gerenciar suas vendas clique no **MENU** a baixo.*
+            *Gerencie suas vendas e produtos clicando e selecionando a opção no **MENU** a baixo.*
             
             \`\`❗ ATENÇÃO A SEGUIR: ❗\`\`
             
-            *Sempre informe o nome e valor correto do produto.*
-
-            *As informações podem levar alguns segundos para serem ser cadastradas tenha paciência.*
-            
-            *Sempre escreva o **VALOR** do produto seguindo o exemplo:* \`\`10,00\`\``)
+            • *Este painel é de uso exclusivo do proprietário.*
+            • *As informações podem levar alguns segundos para serem ser cadastradas no banco de dados.*
+            • *Sempre escreva o **VALOR** do produto seguindo o exemplo:* \`\`10,00\`\``)
             .setColor("#2f3136")
 
         const row = new Discord.MessageActionRow()
