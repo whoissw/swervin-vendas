@@ -22,4 +22,4 @@ process.on("uncaughtException", (error, origin) => {
 });
 process.on("uncaughtExceptionMonitor", (error, origin) => {
   console.log(`🚨 » [ERRO] \n\n` + error, origin);
-});
+}); 

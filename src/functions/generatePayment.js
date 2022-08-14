@@ -4,6 +4,7 @@ const { Pagamento, Carrinho } = require('../models/schemas');
 const mercadopago = require('mercadopago');
 const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
+const { listenerCount } = require('process');
 const db = new QuickDB();
 
 mercadopago.configure({
@@ -61,7 +62,7 @@ const gerarPagamento = async (interaction) => {
         const nomesProdutos = [...new Set(carrinhoDados.produtos
             .map(p => p.produto_nome))].join('\n');
 
-        const conteudoProdutos = carrinhoDados.produtos
+        let conteudoProdutos = carrinhoDados.produtos
             .sort((a, b) => a.produto_id - b.produto_id)
             .map((produto, index) => `\`\`\`\nID do produto: ${index + 1}\nProduto: ${produto.produto_conteudo}\`\`\``);
 
@@ -163,11 +164,11 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 8 || pagamentoStatus !== 'approved') {
+            if (tentativas >= 10 || pagamentoStatus === 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus !== 'approved') {
+                if (pagamentoStatus === 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
@@ -279,30 +280,20 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus === 'approved') {
+                } else if (pagamentoStatus !== 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 
-                        .setDescription(`<:ajuda:986323734551994428> *O seu produto não foi entregue ainda? Clique no botão a baixo para verificar a situação do seu pagamento.*`)
+                        .setDescription(`<:ajuda:986323734551994428> *O seu produto não foi entregue ainda? Abra um **TICKET** e envie o comprovante de pagamento e aguarde a resposta da staff.*`)
                         .setColor("#2f3136")
-
-                    const btn = new Discord.MessageButton()
-
-                        .setCustomId(`verificar-${data.body.id}`)
-                        .setStyle('SECONDARY')
-                        .setLabel('Verificar pagamento')
-                        .setEmoji('986323734551994428')
-
-                    const row = new Discord.MessageActionRow().addComponents([btn])
 
                     interaction.followUp({
                         embeds: [embed],
-                        components: [row],
                         ephemeral: true
                     })
                 }
             }
-        }, 5000);
+        }, 60000);
     }
     catch (error) {
 

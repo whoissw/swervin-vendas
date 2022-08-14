@@ -218,7 +218,7 @@ module.exports = async (client, interaction) => {
                                     label: `${item.nome}`,
                                     emoji: "📦",
                                     description: `Valor do produto: R$ ${item.valor}`,
-                                    value: `${item._id}`,
+                                    value: `showstock-${item._id}`,
                                 }
                             ))
                         ),
@@ -2019,51 +2019,6 @@ module.exports = async (client, interaction) => {
                     atualizarEmbedQtdProduto(produtosQtd[0].produto_nome, produtosQtd.length)
                 ]
             });
-        }
-
-        if (interaction.customId.startsWith("verificar-")) {
-
-            const [, pagamentoId] = interaction.customId.split('-');
-
-            const res = await mercadopago.payment.get(Number(pagamentoId));
-            const pagamentoStatus = res.body.status;
-
-            if (pagamentoStatus === 'approved') {
-
-                /** @type {Carrinho} */
-                const carrinhoDados = await Carrinho.findOne({
-                    server_id: interaction.guildId,
-                    user_id: interaction.user.id,
-                });
-
-                await Pagamento.updateOne({
-                    _id: Number(pagamentoId)
-                }, {
-                    pagamento_confirmado: true,
-                    data: res.body.date_approved
-                });
-
-                const embed = new Discord.MessageEmbed()
-
-                    .setTitle(`<:Positivo:986323641836896316> Pagamento aprovado!`)
-                    .setDescription(`***Olá ${interaction.user.username},***
-                
-                    *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
-
-                    \`\`\`\n${conteudoProdutos.join('\n')}\`\`\``)
-                    .setColor("#2f3136")
-
-                await interaction.reply({ embeds: [embed] })
-
-            } else if (pagamentoStatus !== 'approved') {
-
-                const embed = new Discord.MessageEmbed()
-
-                    .setDescription(`<:alerta:986323751308251187> *O seu pagamento ainda não foi aprovado, aguarde um pouco e tente novamente, caso está mensagem persistir abra um ticket e contacte a staff.* `)
-                    .setColor("#2f3136")
-
-                await interaction.reply({ embeds: [embed], ephemeral: true })
-            }
         }
 
         if (interaction.customId.startsWith("pix")) {
