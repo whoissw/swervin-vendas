@@ -5,6 +5,7 @@ const Discord = require('discord.js')
  * @param {{ nome: String, valor: Number }[]} dados
  * @param {Discord.ButtonInteraction} interaction
  */
+
 const gerarEmbedCarrinhoDetalhes = (dados, interaction) => {
 
     const calcularValor = (quantidade, valorUnidade) => (quantidade * (valorUnidade * 100)) / 100;
@@ -13,9 +14,9 @@ const gerarEmbedCarrinhoDetalhes = (dados, interaction) => {
         .setTitle("Seja Bem-Vindo ao seu Carrinho!")
         .setDescription(`***Fique a vontade para realizar a sua compra!***
         
-        *Este canal é destinado a exibir todos os produtos que estão em seu carrinho.*
+        • *Este canal é destinado a exibir todos os produtos que estão em seu carrinho.*
         
-        *Valor total*: \`R$ 0\``)
+        🛒 *Valor total*: \`R$ 0\``)
         .setColor("#2f3136")
 
     if (!dados || !dados[0]) return embed;
@@ -38,9 +39,9 @@ const gerarEmbedCarrinhoDetalhes = (dados, interaction) => {
     return embed
         .setDescription(`***Fique a vontade para realizar a sua compra!***
         
-        *Este canal é destinado a exibir todos os produtos que estão em seu carrinho.*
+        • *Este canal é destinado a exibir todos os produtos que estão em seu carrinho.*
     
-        *Valor total*: \`R$ ${total}\``)
+        🛒 *Valor total*: \`R$ ${total}\``)
 };
 
 module.exports = { gerarEmbedCarrinhoDetalhes };

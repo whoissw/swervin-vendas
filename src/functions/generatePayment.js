@@ -4,7 +4,6 @@ const { Pagamento, Carrinho } = require('../models/schemas');
 const mercadopago = require('mercadopago');
 const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
-const { listenerCount } = require('process');
 const db = new QuickDB();
 
 mercadopago.configure({
@@ -71,7 +70,16 @@ const gerarPagamento = async (interaction) => {
         aguardandoPagamentoRow.components[0]
 
             .setLabel('Aguardando pagamento')
-            .setEmoji('986324092846243880')
+            .setEmoji('🔄')
+            .setStyle('SECONDARY')
+            .setDisabled(true);
+
+        aguardandoPagamentoRow.components[2]
+
+            .setLabel('Adicionar cupom')
+            .setEmoji('🏷️')
+            .setStyle('SECONDARY')
+            .setCustomId('utilizar-cupom')
             .setDisabled(true);
 
         await interaction.update({ components: [aguardandoPagamentoRow] });
@@ -105,8 +113,9 @@ const gerarPagamento = async (interaction) => {
 
         const embedQR = new Discord.MessageEmbed()
             .setColor("#2f3136")
-            .setDescription(`*O **QRCODE** foi gerado no valor de: \`R$${payment_data.transaction_amount}\`\n aponte a câmera do seu celular para realizar o pagamento.\nOu clique no botão a baixo para receber o código cópia e cola.*`)
-            .setImage('attachment://qrcode.png');
+            .setDescription(`💵 • *O **QRCODE** gerado no valor de: \`R$${payment_data.transaction_amount}\`\n\n📱 • Aponte a câmera do seu celular para realizar o pagamento.\n✏️ • Caso prefira clique no botão a baixo e receba o código **COPIA e COLA**.*`)
+            .setImage('attachment://qrcode.png')
+            .setFooter({ text: "Ao realizar o pagamento aguarde a aprovação do sistema.", iconURL: "https://cdn.discordapp.com/attachments/970045333893685298/1008489927736053780/emoji.png" })
 
         await Pagamento.create({
             _id: parseInt(data.body.id),
@@ -131,12 +140,11 @@ const gerarPagamento = async (interaction) => {
             components: [rowCopiaCola]
         }).then(m => msgsApagar.push(m.id));
 
-        const coletorCopiaCola = interaction.channel.createMessageComponentCollector(
-            {
-                componentType: 'BUTTON',
-                time: 10 * 60 * 1000,
-                filter: i => i.user.id === interaction.user.id && i.customId === 'botao_copia_cola',
-            });
+        const coletorCopiaCola = interaction.channel.createMessageComponentCollector({
+            componentType: 'BUTTON',
+            time: 10 * 60 * 1000,
+            filter: i => i.user.id === interaction.user.id && i.customId === 'botao_copia_cola',
+        });
 
         coletorCopiaCola.on('collect', async i => {
 
@@ -146,9 +154,7 @@ const gerarPagamento = async (interaction) => {
                 .setColor("#2f3136")
                 .setDescription(`${data.body.point_of_interaction.transaction_data.qr_code}`)
 
-            i.channel.send({
-                embeds: [embed]
-            }).then(m => msgsApagar.push(m.id));
+            i.channel.send({ embeds: [embed] }).then(m => msgsApagar.push(m.id));
 
             rowCopiaCola.components[0].setDisabled(true);
 
@@ -164,19 +170,19 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 10 || pagamentoStatus === 'approved') {
+            if (tentativas >= 10 || pagamentoStatus !== 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus === 'approved') {
+                if (pagamentoStatus !== 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
                         .setStyle('SECONDARY')
-                        .setEmoji('986323641836896316')
+                        .setEmoji('✅')
                         .setLabel('Pagamento Aprovado');
 
-                    aguardandoPagamentoRow.components.splice(1, 1);
+                    aguardandoPagamentoRow.components.splice(1, 2);
 
                     if (await db.has(`amount_${config.owner}`)) {
                         await db.add(`amount_${config.owner}`, 1)
@@ -234,18 +240,16 @@ const gerarPagamento = async (interaction) => {
 
                         const embed = new Discord.MessageEmbed()
 
-                            .setTitle(`<:Positivo:986323641836896316> Pagamento aprovado!`)
+                            .setTitle(`✅ Pagamento aprovado!`)
                             .setDescription(`***Olá ${interaction.user.username},***
                             
-                            *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
+                            • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
                             
                             ${conteudoProdutos.join('\n')}`)
                             .setColor("#2f3136")
-                            .setFooter({ text: "Este canal será deletado em 5 minutos." })
+                            .setFooter({ text: "🛒 Este canal será deletado em 5 minutos." })
 
-                        interaction.channel.send({
-                            embeds: [embed]
-                        }).then(async () => {
+                        interaction.channel.send({ embeds: [embed] }).then(async () => {
                             await Carrinho.deleteOne({
                                 server_id: interaction.guildId,
                                 user_id: interaction.member.id
@@ -267,7 +271,6 @@ const gerarPagamento = async (interaction) => {
                     interaction.channel.send(conteudoSeparadoP2.join('\n')).then(async () => {
 
                         await Carrinho.deleteOne({ server_id: interaction.guildId, user_id: interaction.member.id });
-                        await interaction.channel.setTopic(`Carrinho finalizado: ${interaction.user} - ${interaction.user.id}`);
 
                     }).catch(() => {
                         const embed = new Discord.MessageEmbed()
@@ -280,7 +283,7 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus !== 'approved') {
+                } else if (pagamentoStatus === 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 

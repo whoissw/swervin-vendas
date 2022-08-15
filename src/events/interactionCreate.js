@@ -1,5 +1,5 @@
 const Discord = require("discord.js")
-const { Produto, MsgProduto, Pagamento, Carrinho, ProdutoEstoque, Desconto } = require('../models/schemas');
+const { Produto, MsgProduto, Carrinho, ProdutoEstoque, Desconto } = require('../models/schemas');
 const config = require("../../config.json");
 const { atualizarMsgProduto, atualizarEmbedQtdProduto, gerarEmbedCarrinhoDetalhes, gerarPagamento, criarCarrinho } = require('../functions');
 const mercadopago = require('mercadopago');
@@ -148,6 +148,11 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "managesales") {
 
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
             if (interaction.user.id !== config.owner) {
 
                 const msgNot = new Discord.MessageEmbed()
@@ -155,17 +160,8 @@ module.exports = async (client, interaction) => {
                     .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
-                await interaction.message.edit({
-                    embeds: [interaction.message.embeds[0]],
-                    components: [row]
-                })
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
-
-            await interaction.message.edit({
-                embeds: [interaction.message.embeds[0]],
-                components: [row]
-            })
 
             const qtd = await db.get(`amount_${config.owner}`)
             const vendas = await db.get(`sales_${config.owner}`)
@@ -206,6 +202,21 @@ module.exports = async (client, interaction) => {
             }
 
             const itens = await Produto.find({ server_id: interaction.guildId });
+            let itemAtual = itens.find(Boolean); // So pra pegar a tipagem
+
+            if (itens.length < 1) {
+                const embed = new Discord.MessageEmbed()
+
+                    .setColor("#2f3136")
+                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+
+                await interaction.message.edit({
+                    components: [row],
+                    embeds: [interaction.message.embeds[0]]
+                });
+
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            }
 
             const rowMenu = new Discord.MessageActionRow()
                 .addComponents(
@@ -1320,7 +1331,7 @@ module.exports = async (client, interaction) => {
                         .addOptions(
                             itens.map(item => (
                                 {
-                                    label: `${item.code}`,
+                                    label: `Cupom: ${item.code}`,
                                     emoji: "🏷️",
                                     value: `codigo-${item.code}`
                                 }
@@ -1527,6 +1538,7 @@ module.exports = async (client, interaction) => {
                 const itemEscolhido = itens.find(i => `${i._id}` === itemId);
 
                 itemAtual = itemEscolhido;
+
                 try {
                     const modal = new Discord.Modal()
                         .setCustomId('editProdutin')
@@ -1566,10 +1578,17 @@ module.exports = async (client, interaction) => {
 
                     await conteudo.editReply({ embeds: [att] })
 
+                    const filtroBuscaProduto = {
+                        produtoId: itemAtual._id,
+                        server_id: interaction.guildId
+                    };
+
+                    itemAtual.quantidade = await ProdutoEstoque.countDocuments(filtroBuscaProduto);
+
                     await Produto.findOneAndUpdate({
                         _id: itemAtual._id,
-                        quantidade: itemAtual.quantidade,
-                        server_id: interaction.guildId
+                        server_id: interaction.guildId,
+                        quantidade: itemAtual.quantidade
                     }, {
                         nome: nomeProduto,
                         valor: Number(valorProduto.replace(',', '.').replace(/[^\d\.]+/g, ''))
@@ -1714,10 +1733,11 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *A sua compra foi cancelada com sucesso, seu carrinho será deletado em alguns segundos.*`)
+                .setDescription(`<:Positivo:986323641836896316> ***Compra cancelada com sucesso!***`)
+                .setFooter({ text: "🛒 O seu carrinho será deletado dentro de alguns segundos" })
                 .setColor("#2f3136")
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed] });
 
             /** @type {Carrinho} */
             const carrinhoDados = await Carrinho.findOne({
