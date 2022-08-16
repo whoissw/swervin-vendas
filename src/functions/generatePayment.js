@@ -58,6 +58,11 @@ const gerarPagamento = async (interaction) => {
             descont = (valor / 100) * JSON.parse(carrinhoDados.cupom)[0]
         }
 
+        let cupom = "Não utilizado"
+        if (carrinhoDados.cupom) {
+            cupom = JSON.parse(carrinhoDados.cupom)[1]
+        }
+
         const nomesProdutos = [...new Set(carrinhoDados.produtos
             .map(p => p.produto_nome))].join('\n');
 
@@ -170,7 +175,7 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 10 || pagamentoStatus !== 'approved') {
+            if (tentativas >= 15 || pagamentoStatus !== 'approved') {
 
                 clearInterval(interval);
 
@@ -219,8 +224,9 @@ const gerarPagamento = async (interaction) => {
                         💰 **Valor pago:** \`R$ ${payment_data.transaction_amount}\`
                         📊 **Quantidade de itens vendidos:** \`${quantidade}\`
                         👥 **Cliente:** ${interaction.user} \`${interaction.user.id}\`
+                        🏷️ **Cupom utilizado:** \`${cupom}\`
                         ⏰ **Horário da compra:** <t:${~~(Date.now(1) / 1000)}:f>
-                        
+
                         📦 **Produto entregue:** ${conteudoProdutos.join('\n')}`)
 
                     await interaction.guild.channels.cache.find(channels => channels.name === "log-compras").send({ embeds: [embed] })
@@ -247,7 +253,7 @@ const gerarPagamento = async (interaction) => {
                             
                             ${conteudoProdutos.join('\n')}`)
                             .setColor("#2f3136")
-                            .setFooter({ text: "🛒 Este canal será deletado em 5 minutos." })
+                            .setFooter({ text: "🛒 Este canal será deletado em 3 minutos." })
 
                         interaction.channel.send({ embeds: [embed] }).then(async () => {
                             await Carrinho.deleteOne({
@@ -257,7 +263,7 @@ const gerarPagamento = async (interaction) => {
                             await interaction.channel.setTopic(`${interaction.user.id}`);
                             setTimeout(async () => {
                                 await interaction.channel.delete()
-                            }, 5 * 60000)
+                            }, 3 * 60000)
                         });
                         return;
                     }

@@ -1285,7 +1285,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *Código de desconto criado com sucesso!*\n\n*Código:* \`${codiguin}\`\n*Quantidade de usos:* \`${qtdusos}\`\n*Porcentagem de desconto:* \`${porcentos}\``)
+                .setDescription(`<:Positivo:986323641836896316> *Código de desconto criado com sucesso!*\n\n*Código:* \`${codiguin}\`\n*Quantidade de usos:* \`${qtdusos}\`\n*Porcentagem de desconto:* \`${porcentos} %\``)
                 .setColor("#2f3136")
 
             await modalInteraction.reply({ embeds: [embed], ephemeral: true })
@@ -1578,13 +1578,6 @@ module.exports = async (client, interaction) => {
 
                     await conteudo.editReply({ embeds: [att] })
 
-                    const filtroBuscaProduto = {
-                        produtoId: itemAtual._id,
-                        server_id: interaction.guildId
-                    };
-
-                    itemAtual.quantidade = await ProdutoEstoque.countDocuments(filtroBuscaProduto);
-
                     await Produto.findOneAndUpdate({
                         _id: itemAtual._id,
                         server_id: interaction.guildId,
@@ -1593,6 +1586,13 @@ module.exports = async (client, interaction) => {
                         nome: nomeProduto,
                         valor: Number(valorProduto.replace(',', '.').replace(/[^\d\.]+/g, ''))
                     })
+
+                    const filtroBuscaProduto = {
+                        produtoId: itemAtual._id,
+                        server_id: interaction.guildId
+                    };
+
+                    itemAtual.quantidade = await ProdutoEstoque.countDocuments(filtroBuscaProduto);
 
                     const msg = new Discord.MessageEmbed()
 
