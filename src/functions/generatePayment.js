@@ -161,7 +161,7 @@ const gerarPagamento = async (interaction) => {
 
             i.channel.send({ embeds: [embed] }).then(m => msgsApagar.push(m.id));
 
-            rowCopiaCola.components[0].setDisabled(true);
+            rowCopiaCola.components[0].setDisabled(true); 
 
             await i.update({ components: [] });
 

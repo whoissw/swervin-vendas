@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars
 const Discord = require('discord.js')
 const { Carrinho } = require('../models/schemas');
 const { gerarEmbedCarrinhoDetalhes } = require('./generateEmbed');
@@ -30,14 +29,11 @@ const criarCarrinho = async (categoriaCarrinho, interaction) => {
                 deny: ['SEND_MESSAGES']
             },
         ],
-    });
+    })
 
     const msgCarrinhoStatus = await carrinhoCanal.send({
-        content: `${interaction.user}`
-        , embeds: [
-            gerarEmbedCarrinhoDetalhes(null, interaction)
-        ],
-
+        content: `${interaction.user}`,
+        embeds: [gerarEmbedCarrinhoDetalhes(null, interaction)],
         components: [
             new Discord.MessageActionRow()
                 .addComponents(

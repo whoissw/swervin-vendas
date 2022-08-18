@@ -202,7 +202,7 @@ module.exports = async (client, interaction) => {
             }
 
             const itens = await Produto.find({ server_id: interaction.guildId });
-            let itemAtual = itens.find(Boolean); // So pra pegar a tipagem
+            let itemAtual = itens.find(Boolean);
 
             if (itens.length < 1) {
                 const embed = new Discord.MessageEmbed()
@@ -291,7 +291,6 @@ module.exports = async (client, interaction) => {
 
             await interaction.reply({ embeds: [embed], ephemeral: true })
         }
-
         if (interaction.values[0] === "aestoque") {
 
             if (interaction.user.id !== config.owner) {
@@ -729,6 +728,11 @@ module.exports = async (client, interaction) => {
                 await modalInteraction.reply({ embeds: [embed], ephemeral: true })
                 return
             }
+
+            await ProdutoEstoque.deleteMany({
+                server_id: interaction.guildId,
+                produtoId: Number(idProduct)
+            })
 
             await Produto.deleteOne({
                 server_id: interaction.guildId,
@@ -1836,14 +1840,11 @@ module.exports = async (client, interaction) => {
 
             if (quantidade < 1) return interaction.reply({ embeds: [nn], ephemeral: true })
 
-            await interaction.deferUpdate();
-
             /** @type {ProdutoEstoque} */
             const produtoEscolhido = await ProdutoEstoque.findOne({
                 server_id: interaction.guildId,
                 produtoId: _id,
             })
-            console.log(produtoEscolhido)
 
             const carrinhoCanal = interaction.channel;
 
@@ -2083,30 +2084,58 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível mais encontrar estoque de \`${nome}\`*`)
+                    .setDescription(`<:negativo:986324228146085898> *Não foi possível mais encontrar estoque de \`${nome}\`*, para notificar ao chegar estoque clique no botão a baixo.`)
 
                 await interaction.reply({ embeds: [embed], ephemeral: true })
                 return
             }
 
-            await interaction.deferUpdate();
-
             const categoriaCarrinho = interaction.guild.channels.cache.get(await db.get(`category_id${config.owner}`));
-
-            /** @type {TextChannel} */
-            const carrinhoCanal = categoriaCarrinho.children.find(c => c.topic === interaction.user.id) || await criarCarrinho(categoriaCarrinho, interaction);
 
             const produtoNoCarrinho = await Carrinho.findOne({
                 ...filtroCarrinho,
                 'produtos.produto_id': { $eq: _id }
             });
 
+            const canalCriado = categoriaCarrinho.children.find(c => c.topic === interaction.user.id)
+
+            if (produtoNoCarrinho) {
+
+                const embed = new Discord.MessageEmbed()
+
+                    .setDescription(`<:negativo:986324228146085898> *Este item já está no seu carrinho, clique no botão para ir ao seu carrinho.* `)
+                    .setColor("#2f3136")
+
+                const btn = new Discord.MessageButton()
+
+                    .setStyle("LINK")
+                    .setLabel("Ir para o carrinho")
+                    .setEmoji("🛒")
+                    .setURL(`https://discord.com/channels/${interaction.guildId}/${canalCriado.id}`)
+
+                const row = new Discord.MessageActionRow().addComponents(btn)
+
+                await interaction.reply({ embeds: [embed], ephemeral: true, components: [row] });
+                return
+            }
+
+            /** @type {TextChannel} */
+            const carrinhoCanal = categoriaCarrinho.children.find(c => c.topic === interaction.user.id) || await criarCarrinho(categoriaCarrinho, interaction);
+
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:negativo:986324228146085898> *Este item já está no seu carrinho. Cliquei ${carrinhoCanal} para ir ate o seu carrinho.* `)
+                .setDescription(`🛒 *Produto adicionado no seu carrinho:* ${carrinhoCanal}`)
                 .setColor("#2f3136")
 
-            if (produtoNoCarrinho) return interaction.followUp({ embeds: [embed], ephemeral: true });
+            const btn = new Discord.MessageButton()
+
+                .setStyle("LINK")
+                .setLabel("Ir para o carrinho")
+                .setEmoji("🛒")
+                .setURL(`https://discord.com/channels/${interaction.guildId}/${carrinhoCanal.id}`)
+
+            const row = new Discord.MessageActionRow().addComponents(btn)
+            await interaction.reply({ embeds: [embed], components: [row], ephemeral: true })
 
             const msgProduto = await carrinhoCanal.send({
 
