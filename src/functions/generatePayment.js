@@ -161,7 +161,7 @@ const gerarPagamento = async (interaction) => {
 
             i.channel.send({ embeds: [embed] }).then(m => msgsApagar.push(m.id));
 
-            rowCopiaCola.components[0].setDisabled(true); 
+            rowCopiaCola.components[0].setDisabled(true);
 
             await i.update({ components: [] });
 
@@ -175,11 +175,11 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 15 || pagamentoStatus !== 'approved') {
+            if (tentativas >= 15 || pagamentoStatus === 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus !== 'approved') {
+                if (pagamentoStatus === 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
@@ -289,7 +289,7 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus === 'approved') {
+                } else if (pagamentoStatus !== 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 
