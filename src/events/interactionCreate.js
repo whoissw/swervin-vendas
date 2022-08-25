@@ -157,7 +157,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
@@ -196,7 +196,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
@@ -209,7 +209,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
                 return interaction.reply({ embeds: [embed], ephemeral: true });
             }
@@ -241,7 +241,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -273,7 +273,7 @@ module.exports = async (client, interaction) => {
             if (stocks.length === 0) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *O produto selecionado não possui estoque*`)
+                    .setDescription(`<:down:1011735481165283441> *O produto selecionado não possui estoque*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [embed], ephemeral: true })
@@ -299,7 +299,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
@@ -318,7 +318,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
                 return interaction.reply({ embeds: [embed], ephemeral: true });
             }
@@ -402,7 +402,7 @@ module.exports = async (client, interaction) => {
 
                         const add = new Discord.MessageEmbed()
 
-                            .setDescription(`<:Positivo:986323641836896316> *O **ESTOQUE** foi adicionado com sucesso!*`)
+                            .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi adicionado com sucesso!*`)
                             .setColor("#2f3136")
 
                         conteudo.editReply({ embeds: [add] })
@@ -429,21 +429,29 @@ module.exports = async (client, interaction) => {
                             for (const member of filteredNotify) {
                                 const idMember = member.id.split("-")[1]
                                 await db.delete(`${member.id}`)
+                                const user = interaction.guild.members.cache.get(idMember)
 
                                 if (!msgProduto) {
 
                                     const embed = new Discord.MessageEmbed()
-                                        .setDescription(`*O produto: \`${itemAtual.nome}\` foi reabastecido, ainda não é possivel adicionar ele no carrinho, mas fique atento que em breve será possível.*`)
+                                        .setTitle("Notificação de Estoque")
+                                        .setDescription(`*Olá **${user.user.username}**,*
+                                        
+                                        📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, não é possivel ainda adicionar o produto ao seu carrinho.*`)
                                         .setColor("#2f3136")
+                                        .setFooter({ text: `🔔 A notificação foi desativada automaticamente.` })
+
                                     await interaction.guild.members.cache.get(idMember).send({ embeds: [embed] }).catch(() => { })
                                     return;
                                 }
 
                                 const addEstoque = new Discord.MessageEmbed()
-
-                                    .setDescription(`*O produto: \`${itemAtual.nome}\` foi reabastecido, clique no botão a baixo para ser redirecionado até a mensagem.*`)
+                                    .setTitle("Notificação de Estoque")
+                                    .setDescription(`*Olá **${user.user.username}**,*
+                                        
+                                    📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, clique no botão a baixo para ser direcionado até ao produto.*`)
                                     .setColor("#2f3136")
-
+                                    .setFooter({ text: `🔔 A notificação foi desativada automaticamente.` })
                                 const btn = new Discord.MessageButton()
 
                                     .setEmoji("📨")
@@ -477,7 +485,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -494,7 +502,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
                 await interaction.message.edit({
                     components: [row],
@@ -582,7 +590,7 @@ module.exports = async (client, interaction) => {
 
                         const add = new Discord.MessageEmbed()
 
-                            .setDescription(`<:Positivo:986323641836896316> *O **ESTOQUE** foi removido com sucesso!*`)
+                            .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi removido com sucesso!*`)
                             .setColor("#2f3136")
 
                         conteudo.editReply({ embeds: [add] })
@@ -611,11 +619,9 @@ module.exports = async (client, interaction) => {
                         const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
                         if (!canal) console.log('Canal para atualizar o estoque não encontrado')
 
-                        canal.messages.fetch(msgProduto.msg_id)
-                            .then(async m => {
-                                await m.edit({ embeds: [embed] });
-                            }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
-
+                        canal.messages.fetch(msgProduto.msg_id).then(async m => {
+                            await m.edit({ embeds: [embed] });
+                        }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
                     } catch (e) { }
                 }
             });
@@ -627,7 +633,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -696,7 +702,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -712,7 +718,7 @@ module.exports = async (client, interaction) => {
             const msg = new Discord.MessageEmbed()
 
                 .setColor("#2f3136")
-                .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar nunhum produto cadastrado no banco de dados.*`)
+                .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar nunhum produto cadastrado no banco de dados.*`)
 
             await interaction.message.edit({
                 components: [row],
@@ -748,6 +754,11 @@ module.exports = async (client, interaction) => {
 
             const idProduct = collector.values[0];
 
+            const [itemId] = interaction.values;
+            const itemEscolhido = produtos.find(i => `${i._id}` === itemId);
+
+            itemAtual = itemEscolhido;
+
             const product = await Produto.findOne({
                 _id: Number(idProduct),
                 server_id: interaction.guildId,
@@ -756,12 +767,15 @@ module.exports = async (client, interaction) => {
             if (!product) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription("<:negativo:986324228146085898> *O item selecionado não foi encontrado no banco de dados.*")
+                    .setDescription("<:down:1011735481165283441> *O item selecionado não foi encontrado no banco de dados.*")
                     .setColor("#2f3136")
 
                 await modalInteraction.reply({ embeds: [embed], ephemeral: true })
                 return
             }
+
+            /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
+            const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: idProduct });
 
             await ProdutoEstoque.deleteMany({
                 server_id: interaction.guildId,
@@ -775,7 +789,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription("<:Positivo:986323641836896316> *O item selecionado foi removido com sucesso do banco de dados.*")
+                    .setDescription("<:up:1011735428136714240> *O item selecionado foi removido com sucesso do banco de dados.*")
                     .setColor("#2f3136")
 
                 await collector.reply({ embeds: [embed], ephemeral: true })
@@ -784,6 +798,14 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
+                if (!msgProduto) return;
+
+                /** @type {TextChannel} */
+                const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
+                if (!canal) return
+                
+                canal.messages.fetch(msgProduto.msg_id).then(async m => { await m.delete(); }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
             })
         }
 
@@ -798,7 +820,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -814,7 +836,7 @@ module.exports = async (client, interaction) => {
             const msg = new Discord.MessageEmbed()
 
                 .setColor("#2f3136")
-                .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
             await interaction.message.edit({
                 components: [row],
@@ -925,7 +947,7 @@ module.exports = async (client, interaction) => {
 
                     const anuncio = new Discord.MessageEmbed()
 
-                        .setDescription(`<:Positivo:986323641836896316> *O anúncio do produto foi enviado com sucesso no canal:* <#${interaction.channel.id}>`)
+                        .setDescription(`<:up:1011735428136714240> *O anúncio do produto foi enviado com sucesso no canal:* <#${interaction.channel.id}>`)
                         .setColor("#2f3136")
 
                     await i.followUp({ embeds: [anuncio], ephemeral: true })
@@ -959,7 +981,7 @@ module.exports = async (client, interaction) => {
                     catch (error) {
                         const embed = new Discord.MessageEmbed()
 
-                            .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar a mensagems cadastrada no banco de dados. Tente cadastrar novamente o produto.* `)
+                            .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar a mensagems cadastrada no banco de dados. Tente cadastrar novamente o produto.* `)
                             .setColor("#2f3136")
 
                         await i.followUp({
@@ -1006,7 +1028,7 @@ module.exports = async (client, interaction) => {
 
                     const anuncio = new Discord.MessageEmbed()
 
-                        .setDescription(`<:Positivo:986323641836896316> *O anúncio do produto foi enviado com sucesso no canal:* <#${interaction.channel.id}>`)
+                        .setDescription(`<:up:1011735428136714240> *O anúncio do produto foi enviado com sucesso no canal:* <#${interaction.channel.id}>`)
                         .setColor("#2f3136")
 
                     await interaction.message.edit({
@@ -1025,7 +1047,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1123,7 +1145,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1140,7 +1162,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
                 await interaction.message.edit({
                     components: [row],
@@ -1215,7 +1237,7 @@ module.exports = async (client, interaction) => {
                     quantidade: 0
                 })
 
-                await sleep(5000)
+                await sleep(2000)
 
                 const embed = new Discord.MessageEmbed()
 
@@ -1240,7 +1262,7 @@ module.exports = async (client, interaction) => {
 
                 const msg = new Discord.MessageEmbed()
 
-                    .setDescription(`<:Positivo:986323641836896316> *O estoque do produto selecionado foi limpo com sucesso.*`)
+                    .setDescription(`<:up:1011735428136714240> *O estoque do produto selecionado foi limpo com sucesso.*`)
                     .setColor("#2f3136")
 
                 await interaction.editReply({ embeds: [msg] })
@@ -1253,7 +1275,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1312,7 +1334,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você deve inserir uma \`porcentagem/usos\` valídos.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você deve inserir uma \`porcentagem/usos\` valídos.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1332,7 +1354,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *Código de desconto criado com sucesso!*\n\n*Código:* \`${codiguin}\`\n*Quantidade de usos:* \`${qtdusos}\`\n*Porcentagem de desconto:* \`${porcentos} %\``)
+                .setDescription(`<:up:1011735428136714240> *Código de desconto criado com sucesso!*\n\n*Código:* \`${codiguin}\`\n*Quantidade de usos:* \`${qtdusos}\`\n*Porcentagem de desconto:* \`${porcentos} %\``)
                 .setColor("#2f3136")
 
             await modalInteraction.reply({ embeds: [embed], ephemeral: true })
@@ -1344,7 +1366,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1360,7 +1382,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum cupom de desconto cadastrado.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum cupom de desconto cadastrado.*`)
 
                 await interaction.message.edit({
                     components: [row],
@@ -1397,7 +1419,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1421,7 +1443,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *O código de desconto foi deletado com sucesso.*`)
+                .setDescription(`<:up:1011735428136714240> *O código de desconto foi deletado com sucesso.*`)
                 .setColor("#2f3136")
 
             await interaction.reply({ embeds: [embed], ephemeral: true })
@@ -1433,7 +1455,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1483,7 +1505,7 @@ module.exports = async (client, interaction) => {
             if (!membro) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *O membro selecionado não esta no servidor.*`)
+                    .setDescription(`<:down:1011735481165283441> *O membro selecionado não esta no servidor.*`)
                     .setColor("#2f3136")
 
                 return modalInteraction.reply({ embeds: [embed], ephemeral: true })
@@ -1508,7 +1530,7 @@ module.exports = async (client, interaction) => {
 
             const msg = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *Mensagem enviada com sucesso ao membro.*`)
+                .setDescription(`<:up:1011735428136714240> *Mensagem enviada com sucesso ao membro.*`)
                 .setColor("#2f3136")
 
             await modalInteraction.reply({ embeds: [msg], ephemeral: true })
@@ -1520,7 +1542,7 @@ module.exports = async (client, interaction) => {
 
                 const msgNot = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Você não possui permissão para usar esta opção.*`)
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
                     .setColor("#2f3136")
 
                 await interaction.message.edit({
@@ -1542,7 +1564,7 @@ module.exports = async (client, interaction) => {
                 const msg = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
 
                 await interaction.message.edit({
                     components: [row],
@@ -1643,7 +1665,7 @@ module.exports = async (client, interaction) => {
 
                     const msg = new Discord.MessageEmbed()
 
-                        .setDescription(`<:Positivo:986323641836896316> *O valor e nome do produto foi editado com sucesso.*`)
+                        .setDescription(`<:up:1011735428136714240> *O valor e nome do produto foi editado com sucesso.*`)
                         .setColor("#2f3136")
 
                     conteudo.editReply({ embeds: [msg] })
@@ -1681,7 +1703,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:negativo:986324228146085898> *Este carrinho não pertence a você.* `)
+                .setDescription(`<:down:1011735481165283441> *Este carrinho não pertence a você.* `)
                 .setColor("#2f3136")
 
             if (userAbriuCarrinho.id !== interaction.member.id) return interaction.reply({
@@ -1721,7 +1743,7 @@ module.exports = async (client, interaction) => {
             if (!descont) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar este cupom de desconto.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar este cupom de desconto.*`)
                     .setColor("#2f3136")
 
                 return await modalInteraction.reply({ embeds: [embed], ephemeral: true })
@@ -1730,7 +1752,7 @@ module.exports = async (client, interaction) => {
             if (descont.usages === 0) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Este cupom de desconto já atingiu o limite de usos.*`)
+                    .setDescription(`<:down:1011735481165283441> *Este cupom de desconto já atingiu o limite de usos.*`)
                     .setColor("#2f3136")
 
                 return await modalInteraction.reply({ embeds: [embed], ephemeral: true })
@@ -1761,7 +1783,7 @@ module.exports = async (client, interaction) => {
 
             const discont = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *O cupom de desconto foi utilizado com sucesso, ele será aplicado no final da compra.*`)
+                .setDescription(`<:up:1011735428136714240> *O cupom de desconto foi utilizado com sucesso, ele será aplicado no final da compra.*`)
                 .setColor("#2f3136")
 
             await modalInteraction.reply({ embeds: [discont], ephemeral: true })
@@ -1780,7 +1802,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> ***Compra cancelada com sucesso!***`)
+                .setDescription(`<:up:1011735428136714240> ***Compra cancelada com sucesso!***`)
                 .setFooter({ text: "🛒 O seu carrinho será deletado dentro de alguns segundos" })
                 .setColor("#2f3136")
 
@@ -1853,7 +1875,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:negativo:986324228146085898> *Este carrinho não pertence a você.* `)
+                .setDescription(`<:down:1011735481165283441> *Este carrinho não pertence a você.* `)
                 .setColor("#2f3136")
 
             if (userAbriuCarrinho.id !== interaction.member.id) return interaction.reply({
@@ -1870,7 +1892,7 @@ module.exports = async (client, interaction) => {
             const msg = new Discord.MessageEmbed()
 
                 .setColor("#2f3136")
-                .setDescription(`<:negativo:986324228146085898> *Este produto não foi encontrado em nosso banco de dados.* `)
+                .setDescription(`<:down:1011735481165283441> *Este produto não foi encontrado em nosso banco de dados.* `)
 
             if (!itemEncontrado) return interaction.reply({ embeds: [msg], ephemeral: true })
 
@@ -1879,7 +1901,7 @@ module.exports = async (client, interaction) => {
             const nn = new Discord.MessageEmbed()
 
                 .setColor("#2f3136")
-                .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar mais estoque de: \`${nome}\`*`)
+                .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar mais estoque de: \`${nome}\`*`)
 
             if (quantidade < 1) return interaction.reply({ embeds: [nn], ephemeral: true })
 
@@ -1922,7 +1944,7 @@ module.exports = async (client, interaction) => {
             catch (error) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Um erro foi encontrado ao tentar registrar os itens de carrinho.*`)
+                    .setDescription(`<:down:1011735481165283441> *Um erro foi encontrado ao tentar registrar os itens de carrinho.*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [embed], ephemeral: true }).catch(() => interaction.followUp({ embeds: [embed], ephemeral: true }));
@@ -1971,7 +1993,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:negativo:986324228146085898> *Este carrinho não pertence a você.*`)
+                .setDescription(`<:down:1011735481165283441> *Este carrinho não pertence a você.*`)
                 .setColor("#2f3136")
 
             if (userAbriuCarrinho.id !== interaction.member.id) return interaction.reply({ embeds: [embed], ephemeral: true });
@@ -1985,7 +2007,7 @@ module.exports = async (client, interaction) => {
             const msg = new Discord.MessageEmbed()
 
                 .setColor("#2f3136")
-                .setDescription(`<:negativo:986324228146085898> *Este produto não foi encontrado em nosso banco de dados.*`)
+                .setDescription(`<:down:1011735481165283441> *Este produto não foi encontrado em nosso banco de dados.*`)
 
             if (!itemEncontrado) return interaction.reply({ embeds: [msg], ephemeral: true });
 
@@ -2032,7 +2054,7 @@ module.exports = async (client, interaction) => {
             catch (error) {
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Um erro foi encontrado ao tentar registrar os itens de carrinho.*`)
+                    .setDescription(`<:down:1011735481165283441> *Um erro foi encontrado ao tentar registrar os itens de carrinho.*`)
                     .setColor("#2f3136")
 
                 return interaction.reply({ embeds: [embed], ephemeral: true }).catch(() => interaction.followUp({ embeds: [embed], ephemeral: true }));
@@ -2098,7 +2120,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foram cadastrados nenhum produto em nosso banco de dados*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foram cadastrados nenhum produto em nosso banco de dados*`)
 
                 await interaction.reply({ embeds: [embed], ephemeral: true });
                 return
@@ -2112,7 +2134,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar este produto no banco de dados.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar este produto no banco de dados.*`)
 
                 await interaction.reply({ embeds: [embed], ephemeral: true });
                 return
@@ -2131,7 +2153,7 @@ module.exports = async (client, interaction) => {
                 const embed = new Discord.MessageEmbed()
 
                     .setColor("#2f3136")
-                    .setDescription(`<:negativo:986324228146085898> *Não foi possível mais encontrar estoque de \`${nome}\`, para notificar ao chegar estoque clique no botão a baixo.*`)
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível mais encontrar estoque de \`${nome}\`, para notificar ao chegar estoque clique no botão a baixo.*`)
 
                 const btn = new Discord.MessageButton()
 
@@ -2158,7 +2180,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Este item já está no seu carrinho, clique no botão para ir ao seu carrinho.* `)
+                    .setDescription(`<:down:1011735481165283441> *Este item já está no seu carrinho, clique no botão para ir ao seu carrinho.* `)
                     .setColor("#2f3136")
 
                 const btn = new Discord.MessageButton()
@@ -2261,7 +2283,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setDescription(`<:negativo:986324228146085898> *Um erro foi encontrado ao tentar registrar os itens de carrinho.* `)
+                    .setDescription(`<:down:1011735481165283441> *Um erro foi encontrado ao tentar registrar os itens de carrinho.* `)
                     .setColor("#2f3136")
 
                 return carrinhoCanal.send({ embeds: [embed] }).then(async message => {
@@ -2283,16 +2305,32 @@ module.exports = async (client, interaction) => {
 
             const idProduct = interaction.customId.split("-")[1]
 
-            if (await db.has(`${interaction.guild.id}-${interaction.user.id}-notify.${idProduct}`)) return await interaction.update({ components: [] });
+            if (await db.has(`${interaction.guild.id}-${interaction.user.id}-notify.${idProduct}`)) {
+
+                const embed = new Discord.MessageEmbed()
+
+                    .setDescription("<:down:1011735481165283441> A sua notificação já está ativa, aguarde o estoque ser reabastecido.")
+                    .setColor("#2f3136")
+
+                return await interaction.update({ components: [], embeds: [embed] });
+            }
 
             await db.set(`${interaction.guild.id}-${interaction.user.id}-notify.${idProduct}`, true)
 
             const embed = new Discord.MessageEmbed()
 
-                .setDescription(`<:Positivo:986323641836896316> *Você será notificado ao estoque deste produto ser reabastecido.*`)
+                .setDescription(`<:up:1011735428136714240> *Você será notificado ao estoque deste produto ser reabastecido.*`)
                 .setColor("#2f3136")
 
-            return await interaction.update({ components: [], embeds: [embed] })
+            const btn = new Discord.MessageButton()
+
+                .setLabel("Notificação Ativada")
+                .setDisabled(true)
+                .setEmoji("🔔")
+                .setStyle("SECONDARY")
+                .setCustomId("notifyAtivada")
+            const row = new Discord.MessageActionRow().addComponents(btn)
+            return await interaction.update({ components: [row], embeds: [embed] })
         }
     }
 }

@@ -42,7 +42,7 @@ const gerarPagamento = async (interaction) => {
 
         const embed = new Discord.MessageEmbed()
 
-            .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar produtos no seu carrinho para finalizar as compras.*`)
+            .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar produtos no seu carrinho para finalizar as compras.*`)
             .setColor("#2f3136")
 
         if (quantidade < 1) return interaction.reply({
@@ -281,7 +281,7 @@ const gerarPagamento = async (interaction) => {
                     }).catch(() => {
                         const embed = new Discord.MessageEmbed()
 
-                            .setDescription(`<:negativo:986324228146085898> *Ocorreu um erro ao entregar o seu produto. Por gentileza contacte a STAFF*`)
+                            .setDescription(`<:down:1011735481165283441> *Ocorreu um erro ao entregar o seu produto. Por gentileza contacte a STAFF*`)
                             .setColor("#2f3136")
 
                         interaction.reply({
@@ -308,7 +308,7 @@ const gerarPagamento = async (interaction) => {
 
         const embed = new Discord.MessageEmbed()
 
-            .setDescription(`<:negativo:986324228146085898> *Ocorreu um erro ao processar os dados.*`)
+            .setDescription(`<:down:1011735481165283441> *Ocorreu um erro ao processar os dados.*`)
             .setColor("#2f3136")
         interaction.reply({ embeds: [embed], ephemeral: true });
         console.log(error);

@@ -29,7 +29,6 @@ const atualizarMsgProduto = async (itemAtual, interaction) => {
         .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
         .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 
-
     /** @type {MsgProduto}*/
     const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
 
@@ -39,12 +38,12 @@ const atualizarMsgProduto = async (itemAtual, interaction) => {
     const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
     const msg = new Discord.MessageEmbed()
 
-        .setDescription(`<:negativo:986324228146085898> *Não foi possível encontrar a mensagem de exibição do produto:* \`${itemAtual.nome}\``)
+        .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar a mensagem de exibição do produto:* \`${itemAtual.nome}\``)
         .setColor("#2f3136")
 
     if (!canal) return interaction.followUp({ embeds: [msg], ephemeral: true });
 
-    canal.messages.fetch(msgProduto.msg_id).then(async m => { await m.edit({ embeds: [embed] }); }).catch(() => true);
+    await canal.messages.fetch(msgProduto.msg_id).then(async m => { await m.edit({ embeds: [embed] }); }).catch(() => true);
 };
 
 module.exports = { atualizarMsgProduto };
