@@ -1,8 +1,5 @@
 const Discord = require('discord.js')
 const { MsgProduto } = require('../models/schemas');
-const config = require("../../config.json");
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
 
 /** @typedef {Object} Produto
  * @property {Number} _id
@@ -18,10 +15,8 @@ const db = new QuickDB();
  */
 const atualizarMsgProduto = async (itemAtual, interaction) => {
 
-    const guildname = await db.get(`guild_name${config.owner}`)
-
     const embed = new Discord.MessageEmbed()
-        .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
         .setDescription(`***Produto a venda:***
          \`\`\`${itemAtual.nome}\`\`\``)
         .setColor("#2f3136")

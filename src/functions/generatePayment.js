@@ -4,7 +4,10 @@ const { Pagamento, Carrinho } = require('../models/schemas');
 const mercadopago = require('mercadopago');
 const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
-const db = new QuickDB();
+const db = new QuickDB({
+    filePath: "src/sql/json.sqlite"
+});
+
 
 mercadopago.configure({
     access_token: config.accessToken
@@ -68,7 +71,7 @@ const gerarPagamento = async (interaction) => {
 
         let conteudoProdutos = carrinhoDados.produtos
             .sort((a, b) => a.produto_id - b.produto_id)
-            .map((produto, index) => `\`\`\`\nID do produto: ${index + 1}\nProduto: ${produto.produto_conteudo}\`\`\``);
+            .map((produto, index) => `\`\`\`\nProduto ID: ${produto.produto_id}\nProduto: ${produto.produto_conteudo}\`\`\``);
 
         const aguardandoPagamentoRow = interaction.message.components[0];
 
@@ -175,11 +178,11 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 15 || pagamentoStatus === 'approved') {
+            if (tentativas >= 15 || pagamentoStatus !== 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus === 'approved') {
+                if (pagamentoStatus !== 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
@@ -189,22 +192,22 @@ const gerarPagamento = async (interaction) => {
 
                     aguardandoPagamentoRow.components.splice(1, 2);
 
-                    if (await db.has(`amount_${config.owner}`)) {
-                        await db.add(`amount_${config.owner}`, 1)
+                    if (await db.has(`amount_${interaction.guildId}`)) {
+                        await db.add(`amount_${interaction.guildId}`, 1)
                     } else {
-                        await db.set(`amount_${config.owner}`, 1)
+                        await db.set(`amount_${interaction.guildId}`, 1)
                     }
 
-                    if (await db.has(`payment_${config.owner}`)) {
-                        await db.add(`payment_${config.owner}`, valor - descont)
+                    if (await db.has(`payment_${interaction.guildId}`)) {
+                        await db.add(`payment_${interaction.guildId}`, valor - descont)
                     } else {
-                        await db.set(`payment_${config.owner}`, valor - descont)
+                        await db.set(`payment_${interaction.guildId}`, valor - descont)
                     }
 
-                    if (await db.has(`sales_${config.owner}`)) {
-                        await db.add(`sales_${config.owner}`, quantidade)
+                    if (await db.has(`sales_${interaction.guildId}`)) {
+                        await db.add(`sales_${interaction.guildId}`, quantidade)
                     } else {
-                        await db.set(`sales_${config.owner}`, quantidade)
+                        await db.set(`sales_${interaction.guildId}`, quantidade)
                     }
 
                     interaction.message.edit({
@@ -213,7 +216,7 @@ const gerarPagamento = async (interaction) => {
 
                     interaction.channel.bulkDelete(msgsApagar).catch(() => { });
 
-                    const role = await db.get(`role_id${config.owner}`)
+                    const role = await db.get(`role_id${interaction.guildId}`)
 
                     const embed = new Discord.MessageEmbed()
 
@@ -225,6 +228,7 @@ const gerarPagamento = async (interaction) => {
                         📊 **Quantidade de itens vendidos:** \`${quantidade}\`
                         👥 **Cliente:** ${interaction.user} \`${interaction.user.id}\`
                         🏷️ **Cupom utilizado:** \`${cupom}\`
+                        🆔 **ID do pagamento:** \`${Number(data.body.id)}\`
                         ⏰ **Horário da compra:** <t:${~~(Date.now(1) / 1000)}:f>
 
                         📦 **Produto entregue:** ${conteudoProdutos.join('\n')}`)
@@ -244,28 +248,48 @@ const gerarPagamento = async (interaction) => {
 
                     if (tamanhoConteudo < 2000) {
 
-                        const embed = new Discord.MessageEmbed()
+                        const userSend = new Discord.MessageEmbed()
 
-                            .setTitle(`✅ Pagamento aprovado!`)
+                            .setTitle(`<a:sorteio:986385134615920680> Pagamento aprovado!`)
                             .setDescription(`***Olá ${interaction.user.username},***
                             
                             • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
+                            • *O ID da sua compra é este:* \`${Number(data.body.id)}\`
                             
                             ${conteudoProdutos.join('\n')}`)
                             .setColor("#2f3136")
-                            .setFooter({ text: "🛒 Este canal será deletado em 3 minutos." })
+                            .setFooter({ text: "❗Caso ocorra algum problema abra um ticket." })
 
-                        interaction.channel.send({ embeds: [embed] }).then(async () => {
+                        interaction.user.send({ embeds: [userSend] }).then(async () => {
+                            await interaction.channel.delete()
                             await Carrinho.deleteOne({
                                 server_id: interaction.guildId,
                                 user_id: interaction.member.id
                             });
-                            await interaction.channel.setTopic(`${interaction.user.id}`);
-                            setTimeout(async () => {
-                                await interaction.channel.delete()
-                            }, 3 * 60000)
-                        });
-                        return;
+                        }).catch(() => {
+                            const channelSend = new Discord.MessageEmbed()
+
+                                .setTitle(`<a:sorteio:986385134615920680> Pagamento aprovado!`)
+                                .setDescription(`***Olá ${interaction.user.username},***
+                            
+                                • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
+                                • *O ID da sua compra é este:* \`${Number(data.body.id)}\`
+                            
+                                ${conteudoProdutos.join('\n')}`)
+                                .setColor("#2f3136")
+                                .setFooter({ text: "🛒 Este canal será deletado dentro de 3 minutos." })
+
+                            interaction.channel.send({ embeds: [channelSend] }).then(async () => {
+                                setInterval(async () => {
+                                    await interaction.channel.delete()
+                                }, 3 * 60000)
+                                await Carrinho.deleteOne({
+                                    server_id: interaction.guildId,
+                                    user_id: interaction.member.id
+                                })
+                            })
+                        })
+                        return
                     }
 
                     const [conteudoSeparadoP1, conteudoSeparadoP2] = [
@@ -289,7 +313,7 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus !== 'approved') {
+                } else if (pagamentoStatus === 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 
@@ -302,7 +326,7 @@ const gerarPagamento = async (interaction) => {
                     })
                 }
             }
-        }, 60000);
+        }, 5000);
     }
     catch (error) {
 

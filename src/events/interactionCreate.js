@@ -1,11 +1,13 @@
 const Discord = require("discord.js")
-const { Produto, MsgProduto, Carrinho, ProdutoEstoque, Desconto } = require('../models/schemas');
+const { Produto, MsgProduto, Carrinho, ProdutoEstoque, Desconto, Pagamento } = require('../models/schemas');
 const config = require("../../config.json");
 const { atualizarMsgProduto, atualizarEmbedQtdProduto, gerarEmbedCarrinhoDetalhes, gerarPagamento, criarCarrinho } = require('../functions');
 const mercadopago = require('mercadopago');
 const sleep = require('../utils/sleep')
 const { QuickDB } = require('quick.db');
-const db = new QuickDB();
+const db = new QuickDB({
+    filePath: "src/sql/json.sqlite"
+});
 
 mercadopago.configure({
     access_token: config.accessToken
@@ -142,9 +144,11 @@ module.exports = async (client, interaction) => {
      * @property {Number} produtoId
      */
 
-    const guildname = await db.get(`guild_name${config.owner}`)
-
     if (interaction.isSelectMenu()) {
+
+        if (interaction.values[0] === "voltarMenu") {
+            await interaction.update({ components: [row] })
+        }
 
         if (interaction.values[0] === "managesales") {
 
@@ -153,8 +157,7 @@ module.exports = async (client, interaction) => {
                 components: [row]
             })
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -163,26 +166,21 @@ module.exports = async (client, interaction) => {
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
-            const qtd = await db.get(`amount_${config.owner}`)
-            const vendas = await db.get(`sales_${config.owner}`)
-            const valores = await db.get(`payment_${config.owner}`)
+            const qtd = await db.get(`amount_${interaction.guildId}`)
+            const vendas = await db.get(`sales_${interaction.guildId}`)
+            const valores = await db.get(`payment_${interaction.guildId}`)
 
             const embed = new Discord.MessageEmbed()
 
-                .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                 .setDescription("*Gerencie as vendas do seu servidor por meio deste menu.*")
                 .addFields(
-                    { name: '📈 *Vendas já realizadas:*', value: `${qtd ? `\`\`\`${qtd}\`\`\`` : `\`\`\`0\`\`\``}`, inline: true },
-                    { name: '📦 *Produtos já vendidos:*', value: `${vendas ? `\`\`\`${vendas}\`\`\`` : `\`\`\`0\`\`\``}`, inline: true },
-                    { name: '💰 *Total já vendido:*', value: `${valores ? `\`\`\`R$ ${valores}\`\`\`` : `\`\`\`R$ 0,00\`\`\``}`, inline: true })
+                    { name: '📈 *Vendas já realizadas:*', value: `${qtd ? `\`\`\`${qtd}\`\`\`` : `\`\`\`0\`\`\``}`, inline: false },
+                    { name: '📦 *Produtos já vendidos:*', value: `${vendas ? `\`\`\`${vendas}\`\`\`` : `\`\`\`0\`\`\``}`, inline: false },
+                    { name: '💰 *Total já vendido:*', value: `${valores ? `\`\`\`R$ ${valores}\`\`\`` : `\`\`\`R$ 0,00\`\`\``}`, inline: false })
                 .setColor("#2f3136")
 
             interaction.reply({ embeds: [embed], ephemeral: true })
-
-            interaction.message.edit({
-                embeds: [interaction.message.embeds[0]],
-                components: [row]
-            })
         }
 
         if (interaction.values[0] === "exibir_estoque") {
@@ -192,8 +190,7 @@ module.exports = async (client, interaction) => {
                 components: [row]
             })
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -203,7 +200,7 @@ module.exports = async (client, interaction) => {
             }
 
             const itens = await Produto.find({ server_id: interaction.guildId });
-            let itemAtual = itens.find(Boolean);
+            itens.find(Boolean);
 
             if (itens.length < 1) {
                 const embed = new Discord.MessageEmbed()
@@ -228,7 +225,15 @@ module.exports = async (client, interaction) => {
                                     value: `showstock-${item._id}`,
                                 }
                             ))
-                        ),
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
             await interaction.update({
                 components: [rowMenu]
@@ -237,8 +242,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0].startsWith("showstock")) {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -248,6 +252,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -290,7 +295,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "aestoque") {
 
-            if (interaction.user.id !== config.owner) {
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
 
                 await interaction.message.edit({
                     embeds: [interaction.message.embeds[0]],
@@ -337,7 +342,15 @@ module.exports = async (client, interaction) => {
                                     value: `${item._id}`,
                                 }
                             ))
-                        ),
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             await interaction.update({ components: [rowMenu] });
@@ -350,139 +363,139 @@ module.exports = async (client, interaction) => {
 
             coletor.on('collect', async interaction => {
 
-                if (interaction.isSelectMenu()) {
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
 
-                    await interaction.message.edit({
-                        embeds: [interaction.message.embeds[0]],
-                        components: [row]
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
+
+                const [itemId] = interaction.values;
+                const itemEscolhido = itens.find(i => `${i._id}` === itemId);
+
+                itemAtual = itemEscolhido;
+
+                try {
+
+                    const modal = new Discord.Modal()
+                        .setCustomId('novo_item')
+                        .setTitle('Adicionando estoque:');
+
+                    const ProductInput = new Discord.TextInputComponent()
+                        .setCustomId('product')
+                        .setLabel('Conteudo:')
+                        .setRequired(true)
+                        .setStyle('PARAGRAPH')
+
+                    modal.addComponents(new Discord.MessageActionRow().addComponents(ProductInput));
+
+                    await interaction.showModal(modal);
+
+                    const conteudo = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
+                    const productField = conteudo.fields.getTextInputValue("product")
+                    await conteudo.deferReply({ ephemeral: true })
+
+                    const att = new Discord.MessageEmbed()
+
+                        .setDescription(`<a:load:986324092846243880> *O **ESTOQUE** está sendo atualizado...*`)
+                        .setColor("#2f3136")
+
+                    await conteudo.editReply({ embeds: [att] })
+
+                    itemAtual.quantidade++
+
+                    await ProdutoEstoque.create({
+                        produtoId: itemAtual._id,
+                        server_id: interaction.guildId,
+                        conteudo: productField,
+                        data_adicao: new Date()
                     })
 
-                    const [itemId] = interaction.values;
-                    const itemEscolhido = itens.find(i => `${i._id}` === itemId);
+                    await Produto.updateOne({ _id: itemAtual._id }, { quantidade: itemAtual.quantidade });
 
-                    itemAtual = itemEscolhido;
+                    const add = new Discord.MessageEmbed()
 
-                    try {
+                        .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi adicionado com sucesso!*`)
+                        .setColor("#2f3136")
 
-                        const modal = new Discord.Modal()
-                            .setCustomId('novo_item')
-                            .setTitle('Adicionando estoque:');
+                    conteudo.editReply({ embeds: [add] })
 
-                        const ProductInput = new Discord.TextInputComponent()
-                            .setCustomId('product')
-                            .setLabel('Conteudo:')
-                            .setRequired(true)
-                            .setStyle('PARAGRAPH')
+                    const embed = new Discord.MessageEmbed()
 
-                        modal.addComponents(new Discord.MessageActionRow().addComponents(ProductInput));
-
-                        await interaction.showModal(modal);
-
-                        const conteudo = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
-                        const productField = conteudo.fields.getTextInputValue("product")
-                        await conteudo.deferReply({ ephemeral: true })
-
-                        const att = new Discord.MessageEmbed()
-
-                            .setDescription(`<a:load:986324092846243880> *O **ESTOQUE** está sendo atualizado...*`)
-                            .setColor("#2f3136")
-
-                        await conteudo.editReply({ embeds: [att] })
-
-                        itemAtual.quantidade++
-
-                        await ProdutoEstoque.create({
-                            produtoId: itemAtual._id,
-                            server_id: interaction.guildId,
-                            conteudo: productField,
-                            data_adicao: new Date()
-                        })
-
-                        await Produto.updateOne({ _id: itemAtual._id }, { quantidade: itemAtual.quantidade });
-
-                        const add = new Discord.MessageEmbed()
-
-                            .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi adicionado com sucesso!*`)
-                            .setColor("#2f3136")
-
-                        conteudo.editReply({ embeds: [add] })
-
-                        const embed = new Discord.MessageEmbed()
-
-                            .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
-                            .setDescription(`***Produto a venda:***
+                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                        .setDescription(`***Produto a venda:***
                             \`\`\`${itemAtual.nome}\`\`\``)
-                            .setColor("#2f3136")
-                            .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
-                            .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
-                            .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+                        .setColor("#2f3136")
+                        .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
+                        .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
+                        .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 
-                        /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
-                        const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
+                    /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
+                    const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
 
-                        (async () => {
-                            if (itemAtual.quantidade !== 1) return;
-                            const allNotify = await db.all()
+                    (async () => {
+                        if (itemAtual.quantidade !== 1) return;
+                        const allNotify = await db.all()
 
-                            const filteredNotify = allNotify.filter((e) => e.id.includes(interaction.guild.id) && e.id.includes("notify") && e.value[itemAtual._id] === true)
+                        const filteredNotify = allNotify.filter((e) => e.id.includes(interaction.guild.id) && e.id.includes("notify") && e.value[itemAtual._id] === true)
 
-                            for (const member of filteredNotify) {
-                                const idMember = member.id.split("-")[1]
-                                await db.delete(`${member.id}`)
-                                const user = interaction.guild.members.cache.get(idMember)
+                        for (const member of filteredNotify) {
+                            const idMember = member.id.split("-")[1]
+                            await db.delete(`${member.id}`)
+                            const user = interaction.guild.members.cache.get(idMember)
 
-                                if (!msgProduto) {
+                            if (!msgProduto) {
 
-                                    const embed = new Discord.MessageEmbed()
-                                        .setTitle("Notificação de Estoque")
-                                        .setDescription(`*Olá **${user.user.username}**,*
-                                        
-                                        📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, não é possivel ainda adicionar o produto ao seu carrinho.*`)
-                                        .setColor("#2f3136")
-                                        .setFooter({ text: `🔔 A notificação foi desativada automaticamente.` })
-
-                                    await interaction.guild.members.cache.get(idMember).send({ embeds: [embed] }).catch(() => { })
-                                    return;
-                                }
-
-                                const addEstoque = new Discord.MessageEmbed()
+                                const embed = new Discord.MessageEmbed()
                                     .setTitle("Notificação de Estoque")
                                     .setDescription(`*Olá **${user.user.username}**,*
                                         
-                                    📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, clique no botão a baixo para ser direcionado até ao produto.*`)
+                                        📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, não é possivel ainda adicionar o produto ao seu carrinho.*`)
                                     .setColor("#2f3136")
                                     .setFooter({ text: `🔔 A notificação foi desativada automaticamente.` })
-                                const btn = new Discord.MessageButton()
 
-                                    .setEmoji("📨")
-                                    .setStyle("LINK")
-                                    .setLabel("Ir para mensagem")
-                                    .setURL(`https://discord.com/channels/${interaction.guild.id}/${msgProduto.canal_id}/${msgProduto.msg_id}`)
-
-                                const row = new Discord.MessageActionRow().addComponents(btn)
-                                await interaction.guild.members.cache.get(idMember).send({ components: [row], embeds: [addEstoque] }).catch(() => { })
+                                await interaction.guild.members.cache.get(idMember).send({ embeds: [embed] }).catch(() => { })
+                                return;
                             }
-                        })()
 
-                        if (!msgProduto) return;
+                            const addEstoque = new Discord.MessageEmbed()
+                                .setTitle("Notificação de Estoque")
+                                .setDescription(`*Olá **${user.user.username}**,*
+                                        
+                                    📦 *O Produto: \`${itemAtual.nome}\` teve o estoque reabastecido, clique no botão a baixo para ser direcionado até ao produto.*`)
+                                .setColor("#2f3136")
+                                .setFooter({ text: `🔔 A notificação foi desativada automaticamente.` })
+                            const btn = new Discord.MessageButton()
 
-                        /** @type {TextChannel} */
-                        const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
-                        if (!canal) console.log('Canal de atualizar estoque de não encontrado')
+                                .setEmoji("📨")
+                                .setStyle("LINK")
+                                .setLabel("Ir para mensagem")
+                                .setURL(`https://discord.com/channels/${interaction.guild.id}/${msgProduto.canal_id}/${msgProduto.msg_id}`)
 
-                        canal.messages.fetch(msgProduto.msg_id)
-                            .then(async m => {
-                                await m.edit({ embeds: [embed] });
-                            }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
-                    } catch (e) { }
-                }
+                            const row = new Discord.MessageActionRow().addComponents(btn)
+                            await interaction.guild.members.cache.get(idMember).send({ components: [row], embeds: [addEstoque] }).catch(() => { })
+                        }
+                    })()
+
+                    if (!msgProduto) return;
+
+                    /** @type {TextChannel} */
+                    const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
+                    if (!canal) console.log('Canal de atualizar estoque de não encontrado')
+
+                    canal.messages.fetch(msgProduto.msg_id)
+                        .then(async m => {
+                            await m.edit({ embeds: [embed] });
+                        }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
+                } catch (e) { }
             });
         }
 
         if (interaction.values[0] === "resotque") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -492,6 +505,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -527,6 +541,14 @@ module.exports = async (client, interaction) => {
                                 }
                             ))
                         )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             await interaction.update({ components: [rowMenu] });
@@ -539,98 +561,98 @@ module.exports = async (client, interaction) => {
 
             coletor.on('collect', async interaction => {
 
-                if (interaction.isSelectMenu()) {
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
 
-                    await interaction.message.edit({
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
+
+                const [itemId] = interaction.values;
+                const itemEscolhido = itens.find(i => `${i._id}` === itemId);
+
+                itemAtual = itemEscolhido;
+
+                try {
+
+                    const modal = new Discord.Modal()
+                        .setCustomId('novo_item')
+                        .setTitle('Removendo estoque:');
+
+                    const conteudoInput = new Discord.TextInputComponent()
+                        .setCustomId('conteudo')
+                        .setLabel('Conteudo:')
+                        .setRequired(true)
+                        .setStyle('PARAGRAPH');
+
+                    modal.addComponents(
+                        new Discord.MessageActionRow().addComponents(conteudoInput),
+                    );
+
+                    await interaction.showModal(modal);
+
+                    const conteudo = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
+                    await conteudo.deferReply({ ephemeral: true })
+
+                    const att = new Discord.MessageEmbed()
+
+                        .setDescription(`<a:load:986324092846243880> *O **ESTOQUE** está sendo atualizado...*`)
+                        .setColor("#2f3136")
+
+                    await conteudo.editReply({ embeds: [att] })
+
+                    itemAtual.quantidade--;
+                    await ProdutoEstoque.findOneAndDelete({
+                        produtoId: itemAtual._id,
+                        server_id: interaction.guildId,
+                        conteudo: conteudo.fields.getTextInputValue("conteudo")
+                    });
+
+                    await Produto.updateOne({ _id: itemAtual._id }, { quantidade: itemAtual.quantidade });
+
+                    const add = new Discord.MessageEmbed()
+
+                        .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi removido com sucesso!*`)
+                        .setColor("#2f3136")
+
+                    conteudo.editReply({ embeds: [add] })
+
+                    interaction.message.edit({
                         embeds: [interaction.message.embeds[0]],
                         components: [row]
                     })
 
-                    const [itemId] = interaction.values;
-                    const itemEscolhido = itens.find(i => `${i._id}` === itemId);
+                    const embed = new Discord.MessageEmbed()
 
-                    itemAtual = itemEscolhido;
-
-                    try {
-
-                        const modal = new Discord.Modal()
-                            .setCustomId('novo_item')
-                            .setTitle('Removendo estoque:');
-
-                        const conteudoInput = new Discord.TextInputComponent()
-                            .setCustomId('conteudo')
-                            .setLabel('Conteudo:')
-                            .setRequired(true)
-                            .setStyle('PARAGRAPH');
-
-                        modal.addComponents(
-                            new Discord.MessageActionRow().addComponents(conteudoInput),
-                        );
-
-                        await interaction.showModal(modal);
-
-                        const conteudo = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
-                        await conteudo.deferReply({ ephemeral: true })
-
-                        const att = new Discord.MessageEmbed()
-
-                            .setDescription(`<a:load:986324092846243880> *O **ESTOQUE** está sendo atualizado...*`)
-                            .setColor("#2f3136")
-
-                        await conteudo.editReply({ embeds: [att] })
-
-                        itemAtual.quantidade--;
-                        await ProdutoEstoque.findOneAndDelete({
-                            produtoId: itemAtual._id,
-                            server_id: interaction.guildId,
-                            conteudo: conteudo.fields.getTextInputValue("conteudo")
-                        });
-
-                        await Produto.updateOne({ _id: itemAtual._id }, { quantidade: itemAtual.quantidade });
-
-                        const add = new Discord.MessageEmbed()
-
-                            .setDescription(`<:up:1011735428136714240> *O **ESTOQUE** foi removido com sucesso!*`)
-                            .setColor("#2f3136")
-
-                        conteudo.editReply({ embeds: [add] })
-
-                        interaction.message.edit({
-                            embeds: [interaction.message.embeds[0]],
-                            components: [row]
-                        })
-
-                        const embed = new Discord.MessageEmbed()
-
-                            .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
-                            .setDescription(`***Produto a venda:***
+                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                        .setDescription(`***Produto a venda:***
                             \`\`\`${itemAtual.nome}\`\`\``)
-                            .setColor("#2f3136")
-                            .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
-                            .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
-                            .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+                        .setColor("#2f3136")
+                        .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
+                        .addField("**📦・Estoque disponível:**", `\`\`${itemAtual.quantidade}\`\``, true)
+                        .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 
-                        /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
-                        const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
+                    /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
+                    const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
 
-                        if (!msgProduto) return;
+                    if (!msgProduto) return;
 
-                        /** @type {TextChannel} */
-                        const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
-                        if (!canal) console.log('Canal para atualizar o estoque não encontrado')
+                    /** @type {TextChannel} */
+                    const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
+                    if (!canal) console.log('Canal para atualizar o estoque não encontrado')
 
-                        canal.messages.fetch(msgProduto.msg_id).then(async m => {
-                            await m.edit({ embeds: [embed] });
-                        }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
-                    } catch (e) { }
-                }
+                    canal.messages.fetch(msgProduto.msg_id).then(async m => {
+                        await m.edit({ embeds: [embed] });
+                    }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
+                } catch (e) { }
             });
         }
 
         if (interaction.values[0] === "novo") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -640,6 +662,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -686,7 +709,7 @@ module.exports = async (client, interaction) => {
             });
 
             const embed = new Discord.MessageEmbed()
-                .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                 .setColor("#2f3136")
                 .setDescription(`***Novo produto registrado.***
                 
@@ -698,8 +721,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "remover") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -709,23 +731,27 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
             /** @type {{ _id: Number, nome: String, server_id: String, valor: Number, quantidade: Number }[]} */
             const produtos = await Produto.find({ server_id: interaction.guildId });
 
-            const msg = new Discord.MessageEmbed()
+            if (produtos.length < 1) {
 
-                .setColor("#2f3136")
-                .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar nunhum produto cadastrado no banco de dados.*`)
+                const msg = new Discord.MessageEmbed()
 
-            await interaction.message.edit({
-                components: [row],
-                embeds: [interaction.message.embeds[0]]
-            });
+                    .setColor("#2f3136")
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar nunhum produto cadastrado no banco de dados.*`)
 
-            if (produtos.length < 1) return interaction.reply({ embeds: [msg], ephemeral: true });
+                await interaction.message.edit({
+                    components: [row],
+                    embeds: [interaction.message.embeds[0]]
+                });
+
+                return interaction.reply({ embeds: [msg], ephemeral: true });
+            }
 
             const rowProdutos = new Discord.MessageActionRow().addComponents(
                 new Discord.MessageSelectMenu()
@@ -741,6 +767,14 @@ module.exports = async (client, interaction) => {
                             }
                         ))
                     )
+                    .addOptions([
+                        {
+                            label: "Voltar menu",
+                            value: "voltarMenu",
+                            description: "Retornar ao menu principal.",
+                            emoji: "⬅️"
+                        }
+                    ])
             )
 
             await interaction.update({ components: [rowProdutos] })
@@ -751,6 +785,14 @@ module.exports = async (client, interaction) => {
                 max: 1,
                 componentType: "SELECT_MENU"
             });
+
+            if (collector.values[0] === "voltarMenu") {
+                interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
+                return
+            }
 
             const idProduct = collector.values[0];
 
@@ -804,7 +846,7 @@ module.exports = async (client, interaction) => {
                 /** @type {TextChannel} */
                 const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
                 if (!canal) return
-                
+
                 canal.messages.fetch(msgProduto.msg_id).then(async m => { await m.delete(); }).catch(() => console.log('Erro ao atualizar mensagem de estoque de produto'));
             })
         }
@@ -816,8 +858,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "eproduto") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -827,6 +868,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -845,7 +887,7 @@ module.exports = async (client, interaction) => {
 
             if (produtos.length < 1) return interaction.reply({ embeds: [msg], ephemeral: true });
 
-            const menuRow = new Discord.MessageActionRow()
+            let menuRow = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('menu_produtos')
@@ -860,6 +902,14 @@ module.exports = async (client, interaction) => {
                                 }
                             ))
                         )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             interaction.update({ components: [menuRow] })
@@ -872,6 +922,11 @@ module.exports = async (client, interaction) => {
             });
 
             menuCollector.on('collect', async i => {
+
+                if (i.values[0] === "voltarMenu") {
+                    await i.update({ components: [row] })
+                    return
+                }
 
                 const itemSelecionado = produtos.find(p => `${p._id}` === i.values[0]);
 
@@ -886,7 +941,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                    .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                     .setDescription(`***Produto a venda:***
                     \`\`\`${itemSelecionado.nome}\`\`\``)
                     .setColor("#2f3136")
@@ -1043,8 +1098,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "configbot") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1054,6 +1108,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1061,13 +1116,6 @@ module.exports = async (client, interaction) => {
 
                 .setCustomId('configurar')
                 .setTitle('Configure o seu bot');
-
-            const guilda = new Discord.TextInputComponent()
-                .setCustomId('nameguild')
-                .setLabel('Nome do servidor:')
-                .setRequired(true)
-                .setMaxLength(50)
-                .setStyle('SHORT');
 
             const category = new Discord.TextInputComponent()
                 .setCustomId('categoria')
@@ -1095,7 +1143,6 @@ module.exports = async (client, interaction) => {
                 .setStyle('PARAGRAPH')
 
             modal.addComponents(
-                new Discord.MessageActionRow().addComponents(guilda),
                 new Discord.MessageActionRow().addComponents(category),
                 new Discord.MessageActionRow().addComponents(role),
                 new Discord.MessageActionRow().addComponents(nameclient),
@@ -1111,15 +1158,13 @@ module.exports = async (client, interaction) => {
 
             const modalInteraction = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
 
-            const guildanome = modalInteraction.fields.getTextInputValue('nameguild');
             const categoriaid = modalInteraction.fields.getTextInputValue('categoria');
             const cargoid = modalInteraction.fields.getTextInputValue('roleId');
             const imagem = modalInteraction.fields.getTextInputValue('imageClient');
             const nome = modalInteraction.fields.getTextInputValue('nameClient');
 
-            await db.set(`guild_name${config.owner}`, guildanome)
-            await db.set(`category_id${config.owner}`, categoriaid)
-            await db.set(`role_id${config.owner}`, cargoid)
+            await db.set(`category_id${interaction.guildId}`, categoriaid)
+            await db.set(`role_id${interaction.guildId}`, cargoid)
 
             await client.user.setAvatar(imagem).catch(() => true)
             await client.user.setUsername(nome).catch(() => true)
@@ -1128,7 +1173,6 @@ module.exports = async (client, interaction) => {
 
                 .setDescription(`<:anuncio:986323798292832307> *Todas as informações foram setadas com sucesso! Confirme a baixo as informações setadas, caso alguma das informações esteja incorreta altere clicando novamente no menu.*
             
-                *Nome do servidor:* \`${guildanome}\`
                 *Cargo de cliente:* <@&${cargoid}>
                 *Id da categoria:* \`${categoriaid}\`
                 *Nome do bot:* \`${nome}\``)
@@ -1141,8 +1185,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "resetestoque") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1152,6 +1195,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1186,7 +1230,15 @@ module.exports = async (client, interaction) => {
                                     value: `${item._id}`,
                                 }
                             ))
-                        ),
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             await interaction.update({
@@ -1201,6 +1253,15 @@ module.exports = async (client, interaction) => {
             });
 
             coletor.on("collect", async interaction => {
+
+                interaction.message.edit({
+                    components: [row],
+                    embeds: [interaction.message.embeds[0]]
+                })
+
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
 
                 const msg2 = new Discord.MessageEmbed()
 
@@ -1217,11 +1278,6 @@ module.exports = async (client, interaction) => {
                 })
 
                 stocks.forEach((stock) => stock.delete())
-
-                interaction.message.edit({
-                    components: [row],
-                    embeds: [interaction.message.embeds[0]]
-                })
 
                 const [itemId] = interaction.values;
                 const itemEscolhido = itens.find(i => `${i._id}` === itemId);
@@ -1241,7 +1297,7 @@ module.exports = async (client, interaction) => {
 
                 const embed = new Discord.MessageEmbed()
 
-                    .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                    .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                     .setDescription(`***Produto a venda:***
                         \`\`\`${itemAtual.nome}\`\`\``)
                     .setColor("#2f3136")
@@ -1271,8 +1327,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "createcupom") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1282,6 +1337,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1362,8 +1418,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "deletecupom") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1373,6 +1428,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1405,7 +1461,15 @@ module.exports = async (client, interaction) => {
                                     value: `codigo-${item.code}`
                                 }
                             ))
-                        ),
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             await interaction.update({
@@ -1415,8 +1479,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0].startsWith("codigo")) {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1426,6 +1489,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1451,8 +1515,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "sendm") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1462,6 +1525,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1513,7 +1577,7 @@ module.exports = async (client, interaction) => {
 
             const embed = new Discord.MessageEmbed()
 
-                .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                 .setDescription(msgmember)
                 .setColor("#2f3136")
 
@@ -1538,8 +1602,7 @@ module.exports = async (client, interaction) => {
 
         if (interaction.values[0] === "editarproduto") {
 
-            if (interaction.user.id !== config.owner) {
-
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
 
                     .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
@@ -1549,6 +1612,7 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
                 return interaction.reply({ embeds: [msgNot], ephemeral: true })
             }
 
@@ -1586,6 +1650,14 @@ module.exports = async (client, interaction) => {
                                 value: `${produto._id}`,
                             }))
                         )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
                 );
 
             interaction.update({ components: [showMenu] })
@@ -1602,6 +1674,10 @@ module.exports = async (client, interaction) => {
                     embeds: [interaction.message.embeds[0]],
                     components: [row]
                 })
+
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
 
                 const [itemId] = interaction.values;
                 const itemEscolhido = itens.find(i => `${i._id}` === itemId);
@@ -1672,7 +1748,7 @@ module.exports = async (client, interaction) => {
 
                     const embed = new Discord.MessageEmbed()
 
-                        .setAuthor({ name: guildname, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                         .setDescription(`***Produto a venda:***
                         \`\`\`${nomeProduto}\`\`\``)
                         .setColor("#2f3136")
@@ -1870,6 +1946,8 @@ module.exports = async (client, interaction) => {
         }
 
         if (interaction.customId.startsWith("adicionar_produto_")) {
+
+            await interaction.deferUpdate()
 
             const userAbriuCarrinho = await interaction.guild.members.fetch(interaction.channel.topic);
 
@@ -2167,13 +2245,25 @@ module.exports = async (client, interaction) => {
                 return await interaction.reply({ embeds: [embed], ephemeral: true, components: [row] })
             }
 
-            const categoriaCarrinho = interaction.guild.channels.cache.get(await db.get(`category_id${config.owner}`));
+            const categoria = await db.get(`category_id${interaction.guildId}`)
+
+            if (categoria === null) {
+                const embed = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Categoria dos carrinhos não definida. Contacte a staff para resolver o ocorrido.*`)
+                    .setColor("#2f3136")
+
+                return await interaction.reply({ embeds: [embed], ephemeral: true })
+            }
+
+            const categoriaCarrinho = interaction.guild.channels.cache.get(categoria);
 
             const produtoNoCarrinho = await Carrinho.findOne({
                 ...filtroCarrinho,
                 'produtos.produto_id': { $eq: _id }
             });
 
+            /** @type {TextChannel} */
             const canalCriado = categoriaCarrinho.children.find(c => c.topic === interaction.user.id)
 
             if (produtoNoCarrinho) {

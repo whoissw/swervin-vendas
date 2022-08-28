@@ -3,7 +3,10 @@ const { Carrinho } = require('../models/schemas');
 const { gerarEmbedCarrinhoDetalhes } = require('./generateEmbed');
 const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
-const db = new QuickDB();
+const db = new QuickDB({
+    filePath: "src/sql/json.sqlite"
+});
+
 
 /** @param {Discord.ButtonInteraction} interaction */
 const criarCarrinho = async (categoriaCarrinho, interaction) => {
@@ -13,7 +16,7 @@ const criarCarrinho = async (categoriaCarrinho, interaction) => {
         server_id: interaction.guildId,
     };
 
-    const categoria = await db.get(`category_id${config.owner}`)
+    const categoria = await db.get(`category_id${interaction.guildId}`)
 
     const carrinhoCanal = await interaction.guild.channels.create(`🛒・carrinho-${interaction.user.username}`, {
         parent: categoria,

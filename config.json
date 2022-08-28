@@ -3,6 +3,9 @@
   "prefix": "+",
   "accessToken": "APP_USR-1885649400723643-061520-71d8ee58279a8ff2d1835f70e35ba5f8-227086984",
   "mongo_url": "mongodb+srv://Leitao027:Rafa2005@cluster0.7w5om.mongodb.net/?retryWrites=true&w=majority",
-  "author": "https://cdn.discordapp.com/attachments/984149666537029753/991801176754503742/XiolaEdits_Gif_Leitao_V2.gif",
-  "owner": "761670293575172127"
+  "allow": {
+    "members": [
+      "761670293575172127"
+    ]
+  }
 }
