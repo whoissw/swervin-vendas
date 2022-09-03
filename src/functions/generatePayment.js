@@ -178,11 +178,11 @@ const gerarPagamento = async (interaction) => {
             const res = await mercadopago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 15 || pagamentoStatus !== 'approved') {
+            if (tentativas >= 15 || pagamentoStatus === 'approved') {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus !== 'approved') {
+                if (pagamentoStatus === 'approved') {
 
                     aguardandoPagamentoRow.components[0]
 
@@ -235,7 +235,9 @@ const gerarPagamento = async (interaction) => {
 
                     await interaction.guild.channels.cache.find(channels => channels.name === "log-compras").send({ embeds: [embed] })
 
-                    await interaction.guild.members.cache.get(interaction.user.id).roles.add(role).then(() => true)
+                    await interaction.guild.members.cache.get(interaction.user.id).roles.add(role).catch(() => {
+                        console.log("Cargo de clientes não definido.")
+                    })
 
                     await Pagamento.updateOne({ _id: Number(data.body.id) }, {
                         pagamento_confirmado: true,
@@ -251,7 +253,7 @@ const gerarPagamento = async (interaction) => {
                         const userSend = new Discord.MessageEmbed()
 
                             .setTitle(`<a:sorteio:986385134615920680> Pagamento aprovado!`)
-                            .setDescription(`***Olá ${interaction.user.username},***
+                            .setDescription(`*Olá **${interaction.user.username},***
                             
                             • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
                             • *O ID da sua compra é este:* \`${Number(data.body.id)}\`
@@ -313,7 +315,7 @@ const gerarPagamento = async (interaction) => {
                             ephemeral: true
                         })
                     });
-                } else if (pagamentoStatus === 'approved') {
+                } else if (pagamentoStatus !== 'approved') {
 
                     const embed = new Discord.MessageEmbed()
 
@@ -326,7 +328,7 @@ const gerarPagamento = async (interaction) => {
                     })
                 }
             }
-        }, 5000);
+        }, 60000);
     }
     catch (error) {
 

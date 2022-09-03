@@ -1,7 +1,6 @@
 const Discord = require('discord.js')
 const { Carrinho } = require('../models/schemas');
 const { gerarEmbedCarrinhoDetalhes } = require('./generateEmbed');
-const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
 const db = new QuickDB({
     filePath: "src/sql/json.sqlite"

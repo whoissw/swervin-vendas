@@ -3,6 +3,7 @@
   "prefix": "+",
   "accessToken": "APP_USR-1885649400723643-061520-71d8ee58279a8ff2d1835f70e35ba5f8-227086984",
   "mongo_url": "mongodb+srv://Leitao027:Rafa2005@cluster0.7w5om.mongodb.net/?retryWrites=true&w=majority",
+  "serverId": "983825325509193779",
   "allow": {
     "members": [
       "761670293575172127"
