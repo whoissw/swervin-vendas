@@ -3,7 +3,7 @@ const client = new Discord.Client({ intents: 32767 });
 
 const comandos = require('./src/structures/commands')
 const eventos = require('./src/structures/events')
-const config = require("./config.json");
+const config = require("./config.json")
 require("./src/database/mongoose")
 
 comandos()

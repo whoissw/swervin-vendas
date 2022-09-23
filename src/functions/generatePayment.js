@@ -351,7 +351,7 @@ const gerarPagamento = async (interaction) => {
                     await interaction.followUp({ embeds: [embed], ephemeral: true }).catch(() => true)
                 }
             }
-        }, 60000);
+        }, 60000)
     } catch (error) {
 
         const embed = new Discord.MessageEmbed()
