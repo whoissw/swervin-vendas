@@ -54,6 +54,12 @@ module.exports = {
                             emoji: "✏️"
                         },
                         {
+                            label: "Adicionar Estoque em Arquivo",
+                            value: "addProducts",
+                            description: "Adicione estoque via arquivo .txt",
+                            emoji: "🗂️"
+                        },
+                        {
                             label: "Exibir Produto",
                             description: "Execute o comando na sala para exibir o produto.",
                             value: "eproduto",

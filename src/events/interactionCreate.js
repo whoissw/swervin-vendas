@@ -5,9 +5,14 @@ const { atualizarMsgProduto, atualizarEmbedQtdProduto, gerarEmbedCarrinhoDetalhe
 const mercadopago = require('mercadopago');
 const sleep = require('../utils/sleep')
 const { QuickDB } = require('quick.db');
-const db = new QuickDB({
-    filePath: "src/sql/json.sqlite"
-});
+const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
+const fs = require("fs")
+const axios = require("axios")
+
+const { promisify } = require('util');
+
+
+const writeFilePromise = promisify(fs.writeFile);
 
 mercadopago.configure({
     access_token: config.accessToken
@@ -49,6 +54,12 @@ const row = new Discord.MessageActionRow()
                     description: "Execute o comando na sala para exibir o produto.",
                     value: "eproduto",
                     emoji: "🖼️"
+                },
+                {
+                    label: "Adicionar Estoque em Arquivo",
+                    value: "addProducts",
+                    description: "Adicione estoque via arquivo .txt",
+                    emoji: "🗂️"
                 },
                 {
                     label: "Exibir Estoque",
@@ -104,6 +115,7 @@ const row = new Discord.MessageActionRow()
  * @param {Discord.Interaction} interaction
  * @param {Discord.Client} client
  */
+
 module.exports = async (client, interaction) => {
 
     /** @typedef {Object} Produto
@@ -145,6 +157,138 @@ module.exports = async (client, interaction) => {
      */
 
     if (interaction.isSelectMenu()) {
+
+        if (interaction.values[0] === "addProducts") {
+
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
+                const msgNot = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
+                    .setColor("#2f3136")
+
+                return interaction.reply({ embeds: [msgNot], ephemeral: true })
+            }
+
+            const itens = await Produto.find({ server_id: interaction.guildId });
+            let itemAtual = itens.find(Boolean)
+
+            if (itens.length < 1) {
+                const embed = new Discord.MessageEmbed()
+
+                    .setColor("#2f3136")
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum produto cadastrado no banco de dados.*`)
+
+                await interaction.message.edit({
+                    components: [row],
+                    embeds: [interaction.message.embeds[0]]
+                });
+
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            }
+
+            const rowMenu = new Discord.MessageActionRow()
+                .addComponents(
+                    new Discord.MessageSelectMenu()
+                        .setCustomId('edicao_produtos_menu')
+                        .setPlaceholder('Selecione um produto:')
+                        .addOptions(
+                            itens.map(item => (
+                                {
+                                    label: `${item.nome}`,
+                                    emoji: "📦",
+                                    description: `Valor do produto: R$ ${item.valor}`,
+                                    value: `${item._id}`,
+                                }
+                            ))
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
+                );
+
+            await interaction.update({ components: [rowMenu] });
+
+            const coletor = interaction.channel.createMessageComponentCollector({
+                filter: i => ['edicao_produtos_menu'].includes(i.customId),
+                idle: 5 * 60 * 1000,
+                max: 1
+            });
+
+            coletor.on('collect', async interaction => {
+
+                const embed = new Discord.MessageEmbed()
+
+                    .setDescription("*Envie o arquivo **.txt** para ser adicionado os produtos:*")
+                    .setColor("#2f3136")
+
+                try {
+                    await interaction.reply({ embeds: [embed], ephemeral: true })
+                } catch (e) { }
+
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
+
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
+
+                const [itemId] = interaction.values;
+                const itemEscolhido = itens.find(i => `${i._id}` === itemId);
+
+                itemAtual = itemEscolhido;
+
+                function DeleteFile(name) {
+                    fs.unlink(name, (err) => {
+                        if (err) {
+                            return
+                        };
+                    })
+                }
+
+                const collector = interaction.channel.createMessageCollector({
+                    max: 1
+                })
+
+                collector.on("collect", async (c) => {
+                    await c.delete()
+                    const embed = new Discord.MessageEmbed()
+
+                        .setDescription(`<a:load:986324092846243880> *Os arquivo está sendo registrado e alocado no banco de dados...*`)
+                        .setColor("#2f3136")
+
+                    await interaction.editReply({ embeds: [embed] })
+
+                    const url = c.attachments.first().url;
+                    const response = await axios.get(url);
+                    if (response.data) {
+                        await writeFilePromise(c.attachments.first().name, response.data);
+                        const zero = String(response.data).split("\r\n")
+                        console.log(zero)
+
+                        //await ProdutoEstoque.create({
+                        //    produtoId: itemAtual._id,
+                        //    server_id: interaction.guildId,
+                        //    conteudo: zero,
+                        //    data_adicao: new Date()
+                        //})
+                    }
+
+                    DeleteFile(c.attachments.first().name)
+                })
+            })
+        }
 
         if (interaction.values[0] === "voltarMenu") {
             await interaction.update({ components: [row] })
@@ -1170,6 +1314,13 @@ module.exports = async (client, interaction) => {
                 .setMaxLength(50)
                 .setStyle('SHORT')
 
+            const channel = new Discord.TextInputComponent()
+                .setCustomId('channelId')
+                .setLabel('Canal de feedback de compras:')
+                .setRequired(true)
+                .setMaxLength(50)
+                .setStyle('SHORT')
+
             const nameclient = new Discord.TextInputComponent()
                 .setCustomId('nameClient')
                 .setLabel('Alterar o nome do bot:')
@@ -1184,6 +1335,7 @@ module.exports = async (client, interaction) => {
             modal.addComponents(
                 new Discord.MessageActionRow().addComponents(category),
                 new Discord.MessageActionRow().addComponents(role),
+                new Discord.MessageActionRow().addComponents(channel),
                 new Discord.MessageActionRow().addComponents(nameclient),
                 new Discord.MessageActionRow().addComponents(imageclient),
             );
@@ -1199,14 +1351,18 @@ module.exports = async (client, interaction) => {
 
             const categoriaid = modalInteraction.fields.getTextInputValue('categoria');
             const cargoid = modalInteraction.fields.getTextInputValue('roleId');
+            const canalid = modalInteraction.fields.getTextInputValue('channelId');
             const imagem = modalInteraction.fields.getTextInputValue('imageClient');
             const nome = modalInteraction.fields.getTextInputValue('nameClient');
 
             await db.set(`category_id${interaction.guildId}`, categoriaid)
             await db.set(`role_id${interaction.guildId}`, cargoid)
+            await db.set(`channel_id${config.serverId}`, canalid)
 
             await client.user.setAvatar(imagem).catch(() => true)
             await client.user.setUsername(nome).catch(() => true)
+
+            console.log(await db.get(`channel_id${interaction.guildId}`))
 
             const embed = new Discord.MessageEmbed()
 
@@ -1214,6 +1370,7 @@ module.exports = async (client, interaction) => {
             
                 *Cargo de cliente:* <@&${cargoid}>
                 *Id da categoria:* \`${categoriaid}\`
+                *Canal de feedback:* <#${canalid}>
                 *Nome do bot:* \`${nome}\``)
                 .setThumbnail(imagem)
                 .setColor("#2f3136")
@@ -1808,6 +1965,135 @@ module.exports = async (client, interaction) => {
                 } catch (e) { }
             })
         }
+
+        if (interaction.values[0] === "starOne") {
+
+            const row = new Discord.MessageActionRow()
+                .addComponents(
+                    new Discord.MessageSelectMenu()
+                        .setCustomId('setCustomId')
+                        .setPlaceholder("Agradecemos pelo feedback!")
+                        .setDisabled(true)
+                        .addOptions([
+                            {
+                                label: "feedback",
+                                value: "feedback",
+                                description: "feedback",
+                            }
+                        ])
+                )
+
+            await interaction.update({ components: [row] })
+
+            const canal = await db.get(`channel_id${config.serverId}`)
+
+            if (canal === null) {
+                return
+            }
+
+            const embed = new Discord.MessageEmbed()
+
+                .setTitle("*Novo feedback*")
+                .setDescription(`👥 • *Feedback enviado por:* ${interaction.user}\n⏰ • *Horario enviado:* <t:${~~(Date.now(1) / 1000)}:f>\n📥 • *Feedback enviado:* \`⭐\``)
+                .setFooter({ text: "❤️ Agradeçemos pelo feedback!" })
+                .setColor("#2f3136")
+
+            await client.channels.cache.get(canal).send({ embeds: [embed] })
+
+            if (await db.has(`feedbaks_${config.serverId}`)) {
+                await db.add(`feedbaks_${config.serverId}`, 1)
+            } else {
+                await db.set(`feedbaks_${config.serverId}`, 1)
+            }
+
+            await client.channels.cache.get(canal).setTopic(`Feedbacks enviados: ${await db.get(`feedbaks_${config.serverId}`)}`)
+        }
+
+        if (interaction.values[0] === "starTwo") {
+
+            const row = new Discord.MessageActionRow()
+                .addComponents(
+                    new Discord.MessageSelectMenu()
+                        .setCustomId('setCustomId')
+                        .setPlaceholder("Agradecemos pelo feedback!")
+                        .setDisabled(true)
+                        .addOptions([
+                            {
+                                label: "feedback",
+                                value: "feedback",
+                                description: "feedback",
+                            }
+                        ])
+                )
+
+            await interaction.update({ components: [row] })
+
+            const canal = await db.get(`channel_id${config.serverId}`)
+
+            if (canal === null) {
+                return
+            }
+
+            const embed = new Discord.MessageEmbed()
+
+                .setTitle("*Novo feedback*")
+                .setDescription(`👥 • *Feedback enviado por:* ${interaction.user}\n⏰ • *Horario enviado:* <t:${~~(Date.now(1) / 1000)}:f>\n📥 • *Feedback enviado:* \`⭐⭐\``)
+                .setFooter({ text: "❤️ Agradeçemos pelo feedback!" })
+                .setColor("#2f3136")
+
+            await client.channels.cache.get(canal).send({ embeds: [embed] })
+
+            if (await db.has(`feedbaks_${config.serverId}`)) {
+                await db.add(`feedbaks_${config.serverId}`, 1)
+            } else {
+                await db.set(`feedbaks_${config.serverId}`, 1)
+            }
+
+            await client.channels.cache.get(canal).setTopic(`Feedbacks enviados: ${await db.get(`feedbaks_${config.serverId}`)}`)
+        }
+
+        if (interaction.values[0] === "starThree") {
+
+            const row = new Discord.MessageActionRow()
+                .addComponents(
+                    new Discord.MessageSelectMenu()
+                        .setCustomId('setCustomId')
+                        .setPlaceholder("Agradecemos pelo feedback!")
+                        .setDisabled(true)
+                        .addOptions([
+                            {
+                                label: "feedback",
+                                value: "feedback",
+                                description: "feedback",
+                            }
+                        ])
+                )
+
+            await interaction.update({ components: [row] })
+
+            const canal = await db.get(`channel_id${config.serverId}`)
+
+            if (canal === null) {
+                return
+            }
+
+            const embed = new Discord.MessageEmbed()
+
+                .setTitle("*Novo feedback*")
+                .setDescription(`👥 • *Feedback enviado por:* ${interaction.user}\n⏰ • *Horario enviado:* <t:${~~(Date.now(1) / 1000)}:f>\n📥 • *Feedback enviado:* \`⭐⭐⭐\``)
+                .setFooter({ text: "❤️ Agradeçemos pelo feedback!" })
+                .setColor("#2f3136")
+
+            await client.channels.cache.get(canal).send({ embeds: [embed] })
+
+            if (await db.has(`feedbaks_${config.serverId}`)) {
+                await db.add(`feedbaks_${config.serverId}`, 1)
+            } else {
+                await db.set(`feedbaks_${config.serverId}`, 1)
+            }
+
+            await client.channels.cache.get(canal).setTopic(`Feedbacks enviados: ${await db.get(`feedbaks_${config.serverId}`)}`)
+        }
     }
 
     if (interaction.isButton()) {
@@ -1913,7 +2199,9 @@ module.exports = async (client, interaction) => {
 
         if (interaction.customId === "cancelar-compra") {
 
-            await interaction.channel.bulkDelete(100, true)
+            try {
+                await interaction.channel.bulkDelete(100, true)
+            } catch (e) { }
 
             const embed = new Discord.MessageEmbed()
 
@@ -1977,7 +2265,10 @@ module.exports = async (client, interaction) => {
                 user_id: interaction.user.id,
             });
 
-            setTimeout(() => interaction.channel.delete().catch(() => { }), 3000);
+
+            setTimeout(async () => {
+                await interaction.channel.delete().catch(() => true)
+            }, 3000)
         }
 
         if (interaction.customId === "finalizar-compra") {
@@ -1989,72 +2280,81 @@ module.exports = async (client, interaction) => {
                 })
 
                 pagamentoInativo.on("end", async (c) => {
+                    if (c.size === 0) {
 
-                    await interaction.channel.delete().catch(() => true)
+                        if (!interaction.channel) {
+                            return
+                        }
+                        await interaction.channel.delete().catch(() => true)
 
-                    const embed = new Discord.MessageEmbed()
+                        const embed = new Discord.MessageEmbed()
 
-                        .setTitle("Notificação inatividade")
-                        .setDescription(`*Olá **${interaction.user.username},***
-                        
-                        • *A sua compra foi cancelada por inatividade, e todos os produtos foram devolvido para o estoque. Você pode voltar a comprar quando quiser!*`)
-                        .setColor("#2f3136")
+                            .setTitle("Notificação de inatividade")
+                            .setDescription(`*Olá **${interaction.user.username},***
+                            
+                            • *A sua compra foi cancelada por inatividade, e todos os produtos foram devolvido para o estoque. Você pode voltar a comprar quando quiser!*`)
+                            .setColor("#2f3136")
 
-                    await interaction.user.send({ embeds: [embed] }).catch(() => true)
+                        await interaction.user.send({ embeds: [embed] }).catch(() => true)
 
-                    /** @type {Carrinho} */
-                    const carrinhoDados = await Carrinho.findOne({
-                        server_id: interaction.guildId,
-                        msg_carrinho_status: interaction.message.id,
-                    });
-
-                    if (carrinhoDados.cupom) {
-                        const cupom = JSON.parse(carrinhoDados.cupom)
-                        const descont = await Desconto.findOne({
-                            code: cupom[1]
-                        })
-                        descont.usages++
-                        await descont.updateOne({
-                            usages: descont.usages
-                        })
-                    }
-
-                    if (carrinhoDados.produtos.length > 0) {
-
-                        /** @type {Produto[]} */
-                        const todosProdutos = await Produto.find({ server_id: interaction.guildId });
-
-                        /** @type {Collection<Number,ProdutoCarrinho[]>} */
-                        const categoriasProdutos = new Discord.Collection();
-
-                        carrinhoDados.produtos.forEach(p => {
-                            categoriasProdutos.get(p.produto_id)?.push(p) || categoriasProdutos.set(p.produto_id, [p]);
+                        /** @type {Carrinho} */
+                        const carrinhoDados = await Carrinho.findOne({
+                            server_id: interaction.guildId,
+                            msg_carrinho_status: interaction.message.id,
                         });
 
-                        for (const [id, produtos] of categoriasProdutos) {
-
-                            await ProdutoEstoque.insertMany(produtos.map(i => (
-                                {
-                                    produtoId: i.produto_id,
-                                    server_id: interaction.guildId,
-                                    conteudo: i.produto_conteudo,
-                                    data_adicao: i.produto_data_adicao,
-                                })
-                            ));
-                            const produtoAtualizar = todosProdutos.find(i => i._id === id);
-                            produtoAtualizar.quantidade = await ProdutoEstoque.countDocuments(
-                                {
-                                    server_id: interaction.guildId,
-                                    produtoId: id,
-                                });
-                            atualizarMsgProduto(produtoAtualizar, interaction);
+                        if (!carrinhoDados) {
+                            return
                         }
-                    }
 
-                    await Carrinho.deleteOne({
-                        server_id: interaction.guildId,
-                        user_id: interaction.user.id,
-                    });
+                        if (carrinhoDados.cupom) {
+                            const cupom = JSON.parse(carrinhoDados.cupom)
+                            const descont = await Desconto.findOne({
+                                code: cupom[1]
+                            })
+                            descont.usages++
+                            await descont.updateOne({
+                                usages: descont.usages
+                            })
+                        }
+
+                        if (carrinhoDados.produtos.length > 0) {
+
+                            /** @type {Produto[]} */
+                            const todosProdutos = await Produto.find({ server_id: interaction.guildId });
+
+                            /** @type {Collection<Number,ProdutoCarrinho[]>} */
+                            const categoriasProdutos = new Discord.Collection();
+
+                            carrinhoDados.produtos.forEach(p => {
+                                categoriasProdutos.get(p.produto_id)?.push(p) || categoriasProdutos.set(p.produto_id, [p]);
+                            });
+
+                            for (const [id, produtos] of categoriasProdutos) {
+
+                                await ProdutoEstoque.insertMany(produtos.map(i => (
+                                    {
+                                        produtoId: i.produto_id,
+                                        server_id: interaction.guildId,
+                                        conteudo: i.produto_conteudo,
+                                        data_adicao: i.produto_data_adicao,
+                                    })
+                                ));
+                                const produtoAtualizar = todosProdutos.find(i => i._id === id);
+                                produtoAtualizar.quantidade = await ProdutoEstoque.countDocuments(
+                                    {
+                                        server_id: interaction.guildId,
+                                        produtoId: id,
+                                    });
+                                atualizarMsgProduto(produtoAtualizar, interaction);
+                            }
+                        }
+
+                        await Carrinho.deleteOne({
+                            server_id: interaction.guildId,
+                            user_id: interaction.user.id,
+                        });
+                    }
                 })
             })
         }
@@ -2075,9 +2375,9 @@ module.exports = async (client, interaction) => {
                 .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
                 .setDescription("*Gerencie as vendas do seu servidor por meio deste menu.*")
                 .addFields(
-                    { name: '📈 *Vendas já realizadas:*', value: `\`\`\`0\`\`\``, inline: false },
-                    { name: '📦 *Produtos já vendidos:*', value: `\`\`\`0\`\`\``, inline: false },
-                    { name: '💰 *Total já vendido:*', value: `\`\`\`R$ 0,00\`\`\``, inline: false })
+                    { name: '📈 *Vendas já realizadas:*', value: `0`, inline: false },
+                    { name: '📦 *Produtos já vendidos:*', value: `0`, inline: false },
+                    { name: '💰 *Total já vendido:*', value: `R$ 0,00`, inline: false })
                 .setColor("#2f3136")
 
             const btn = new Discord.MessageButton()
@@ -2085,10 +2385,10 @@ module.exports = async (client, interaction) => {
                 .setLabel("Zerar vendas")
                 .setStyle("DANGER")
                 .setEmoji("♻️")
-                .setDisabled(true)
                 .setCustomId("zerarVendas")
+                .setDisabled(true)
 
-            const rowClear = new Discord.MessageActionRow().addComponents(btn)
+            const rowClear = new Discord.MessageActionRow().addComponents(btn1, btn2, btn)
 
             await interaction.update({ embeds: [embedEdit], components: [rowClear], fetchReply: true })
             await db.delete(`amount_${interaction.guildId}`)

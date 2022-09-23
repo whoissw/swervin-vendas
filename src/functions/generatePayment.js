@@ -262,8 +262,38 @@ const gerarPagamento = async (interaction) => {
                             .setColor("#2f3136")
                             .setFooter({ text: "❗Caso ocorra algum problema abra um ticket." })
 
-                        interaction.user.send({ embeds: [userSend] }).then(async () => {
-                            await interaction.channel.delete()
+                        const avaliacao = new Discord.MessageEmbed()
+
+                            .setDescription(`***Que tal fazer um feedback da sua compra?***
+                            
+                            <a:clique:1016422981892853880> *Para dar um feedback da compra que você realizou clique no menu a baixo e selecione de acordo com o que você achou da sua compra!*`)
+                            .setColor("#2f3136")
+
+                        const row = new Discord.MessageActionRow()
+                            .addComponents(
+                                new Discord.MessageSelectMenu()
+                                    .setCustomId("avaliacaoCliente")
+                                    .setPlaceholder("De o feedback da sua compra!")
+                                    .setOptions(
+                                        [
+                                            {
+                                                label: "⭐",
+                                                value: "starOne"
+                                            },
+                                            {
+                                                label: "⭐⭐",
+                                                value: "starTwo"
+                                            },
+                                            {
+                                                label: "⭐⭐⭐",
+                                                value: "starThree"
+                                            }
+                                        ]
+                                    )
+                            )
+
+                        interaction.user.send({ embeds: [userSend, avaliacao], components: [row] }).then(async () => {
+                            await interaction.channel.delete().catch(() => true)
                             await Carrinho.deleteOne({
                                 server_id: interaction.guildId,
                                 user_id: interaction.member.id
@@ -282,8 +312,8 @@ const gerarPagamento = async (interaction) => {
                                 .setFooter({ text: "🛒 Este canal será deletado dentro de 3 minutos." })
 
                             interaction.channel.send({ embeds: [channelSend] }).then(async () => {
-                                setInterval(async () => {
-                                    await interaction.channel.delete()
+                                setTimeout(async () => {
+                                    await interaction.channel.delete().catch(() => true)
                                 }, 3 * 60000)
                                 await Carrinho.deleteOne({
                                     server_id: interaction.guildId,
@@ -304,33 +334,25 @@ const gerarPagamento = async (interaction) => {
 
                         await Carrinho.deleteOne({ server_id: interaction.guildId, user_id: interaction.member.id });
 
-                    }).catch(() => {
+                    }).catch(async () => {
                         const embed = new Discord.MessageEmbed()
 
                             .setDescription(`<:down:1011735481165283441> *Ocorreu um erro ao entregar o seu produto. Por gentileza contacte a STAFF*`)
                             .setColor("#2f3136")
 
-                        interaction.reply({
-                            embeds: [embed],
-                            ephemeral: true
-                        })
+                        await interaction.reply({ embeds: [embed], ephemeral: true })
                     });
                 } else if (pagamentoStatus !== 'approved') {
-
                     const embed = new Discord.MessageEmbed()
 
                         .setDescription(`<:ajuda:986323734551994428> *O seu produto não foi entregue ainda? Abra um **TICKET** e envie o comprovante de pagamento e aguarde a resposta da staff.*`)
                         .setColor("#2f3136")
 
-                    interaction.followUp({
-                        embeds: [embed],
-                        ephemeral: true
-                    })
+                    await interaction.followUp({ embeds: [embed], ephemeral: true }).catch(() => true)
                 }
             }
         }, 60000);
-    }
-    catch (error) {
+    } catch (error) {
 
         const embed = new Discord.MessageEmbed()
 
