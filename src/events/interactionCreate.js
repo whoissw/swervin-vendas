@@ -478,9 +478,16 @@ module.exports = async (client, interaction) => {
                 return interaction.reply({ embeds: [embed], ephemeral: true })
             }
 
+            const msg = new Discord.MessageEmbed()
+
+                .setDescription(`<a:load:986324092846243880> *O estoque do produto selecionado está sendo verificado...*`)
+                .setColor("#2f3136")
+
+            await interaction.reply({ embeds: [msg], ephemeral: true })
+            await sleep(5000)
+
             function split(str, index) {
                 const result = [str.slice(0, index), str.slice(index)];
-
                 return result;
             }
 
@@ -500,7 +507,7 @@ module.exports = async (client, interaction) => {
                 })
             }
 
-            let data = `${stocks2}`
+            var data = `${stocks2}`
 
             try {
                 if (second) {
@@ -511,11 +518,11 @@ module.exports = async (client, interaction) => {
                         .setColor("#2f3136")
 
                     const embed2 = new Discord.MessageEmbed()
-                    
+
                         .setDescription(`\`\`\`${second.replace(/##/g, "\n")}`)
                         .setColor("#2f3136")
 
-                    await interaction.update({ embeds: [embed, embed2], ephemeral: true })
+                    await interaction.editReply({ embeds: [embed, embed2], ephemeral: true })
                     return
                 }
             } catch (e) {
@@ -530,17 +537,14 @@ module.exports = async (client, interaction) => {
                             .setDescription(`<:up:1011735428136714240> *O estoque do produto selecionado excedeu o limite maxímo de caracteres e foi criado um arquivo.*`)
                             .setColor("#2f3136")
 
-                        await interaction.channel.send({ files: [estoque2], embeds: [embed] }).then(async files => {
-                            await sleep(15000)
-                            DeleteFile("./estoque.txt")
-                            await files.delete()
-                        })
+                        await interaction.editReply({ files: [estoque2], embeds: [embed] })
+                        DeleteFile("./estoque.txt")
                     }
                     return
-                });
+                })
                 return
             }
-            await interaction.reply({ embeds: [embed], ephemeral: true })
+            await interaction.editReply({ embeds: [embed], ephemeral: true })
         }
 
         if (interaction.values[0] === "aestoque") {
