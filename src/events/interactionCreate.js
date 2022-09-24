@@ -8,9 +8,9 @@ const { QuickDB } = require('quick.db');
 const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
 const fs = require("fs")
 const axios = require("axios")
+const jimp = require('jimp')
 
 const { promisify } = require('util');
-
 
 const writeFilePromise = promisify(fs.writeFile);
 
@@ -263,28 +263,60 @@ module.exports = async (client, interaction) => {
 
                 collector.on("collect", async (c) => {
                     await c.delete()
-                    const embed = new Discord.MessageEmbed()
-
-                        .setDescription(`<a:load:986324092846243880> *Os arquivo está sendo registrado e alocado no banco de dados...*`)
-                        .setColor("#2f3136")
-
-                    await interaction.editReply({ embeds: [embed] })
 
                     const url = c.attachments.first().url;
                     const response = await axios.get(url);
+
                     if (response.data) {
+                        const zero = String(response.data).split("\r\n").length
                         await writeFilePromise(c.attachments.first().name, response.data);
-                        const zero = String(response.data).split("\r\n")
-                        console.log(zero)
 
-                        //await ProdutoEstoque.create({
-                        //    produtoId: itemAtual._id,
-                        //    server_id: interaction.guildId,
-                        //    conteudo: zero,
-                        //    data_adicao: new Date()
-                        //})
+                        String(response.data).split("\r\n").forEach(async (account) => {
+                            await ProdutoEstoque.create({
+                                produtoId: itemAtual._id,
+                                server_id: interaction.guildId,
+                                conteudo: account,
+                                data_adicao: new Date()
+                            })
+                        })
+
+                        const quantidadeTotal = itemAtual.quantidade + zero
+                        const embed = new Discord.MessageEmbed()
+
+                            .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                            .setDescription(`***Produto a venda:***
+                            \`\`\`${itemAtual.nome}\`\`\``)
+                            .setColor("#2f3136")
+                            .addField("**💵・Valor do produto:**", `\`\`R$${itemAtual.valor}\`\``, true)
+                            .addField("**📦・Estoque disponível:**", `\`\`${quantidadeTotal}\`\``, true)
+                            .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+
+                        /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
+                        const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
+
+                        if (!msgProduto) return;
+
+                        /** @type {TextChannel} */
+                        const canal = interaction.guild.channels.cache.get(msgProduto.canal_id);
+                        if (!canal) console.log('Canal de atualizar estoque de não encontrado')
+
+                        canal.messages.fetch(msgProduto.msg_id).then(async m => { await m.edit({ embeds: [embed] }); }).catch(() => true);
+
+                        const msg2 = new Discord.MessageEmbed()
+
+                            .setDescription(`<a:load:986324092846243880> *Foram encontrado **${zero}** produto(s) e estão sendo analisados e sendo registrado(s).*`)
+                            .setColor("#2f3136")
+
+                        await interaction.editReply({ embeds: [msg2] })
+                        await sleep(7000)
+
+                        const msg = new Discord.MessageEmbed()
+
+                            .setDescription(`<:up:1011735428136714240> *O arquivo foi analisado com sucesso e foram registrado(s) **${zero}** produto(s).*`)
+                            .setColor("#2f3136")
+
+                        await interaction.editReply({ embeds: [msg] })
                     }
-
                     DeleteFile(c.attachments.first().name)
                 })
             })
@@ -428,6 +460,10 @@ module.exports = async (client, interaction) => {
                 return `\`\`\`\n📦・${stock.conteudo}\`\`\``
             })
 
+            const stocks2 = stocksArray.map((stock) => {
+                return `\n${stock.conteudo}`
+            })
+
             await interaction.message.edit({
                 embeds: [interaction.message.embeds[0]],
                 components: [row]
@@ -456,21 +492,54 @@ module.exports = async (client, interaction) => {
 
             const [first, second] = split(stocks.join("##"), 3850);
 
-            if (second) {
-                const embed = new Discord.MessageEmbed()
-
-                    .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
-                    .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${first.replace(/##/g, "\n")}\`\`\``)
-                    .setColor("#2f3136")
-
-                const embed2 = new Discord.MessageEmbed()
-
-                    .setDescription(`\`\`\`${second.replace(/##/g, "\n")}`)
-                    .setColor("#2f3136")
-                await interaction.reply({ embeds: [embed, embed2], ephemeral: true })
-                return
+            function DeleteFile(name) {
+                fs.unlinkSync(name, (err) => {
+                    if (err) {
+                        return
+                    };
+                })
             }
 
+            let data = `${stocks2}`
+
+            try {
+                if (second) {
+                    const embed = new Discord.MessageEmbed()
+
+                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                        .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${first.replace(/##/g, "\n")}\`\`\``)
+                        .setColor("#2f3136")
+
+                    const embed2 = new Discord.MessageEmbed()
+                    
+                        .setDescription(`\`\`\`${second.replace(/##/g, "\n")}`)
+                        .setColor("#2f3136")
+
+                    await interaction.update({ embeds: [embed, embed2], ephemeral: true })
+                    return
+                }
+            } catch (e) {
+                fs.writeFile("estoque.txt", data, async (err) => {
+                    if (err)
+                        console.log(err);
+                    else {
+                        var atc = fs.readFileSync('./estoque.txt', { "encoding": "utf-8" });
+                        const estoque2 = new Discord.MessageAttachment(Buffer.from(atc), 'estoque.txt')
+                        const embed = new Discord.MessageEmbed()
+
+                            .setDescription(`<:up:1011735428136714240> *O estoque do produto selecionado excedeu o limite maxímo de caracteres e foi criado um arquivo.*`)
+                            .setColor("#2f3136")
+
+                        await interaction.channel.send({ files: [estoque2], embeds: [embed] }).then(async files => {
+                            await sleep(15000)
+                            DeleteFile("./estoque.txt")
+                            await files.delete()
+                        })
+                    }
+                    return
+                });
+                return
+            }
             await interaction.reply({ embeds: [embed], ephemeral: true })
         }
 
@@ -2388,7 +2457,7 @@ module.exports = async (client, interaction) => {
                 .setCustomId("zerarVendas")
                 .setDisabled(true)
 
-            const rowClear = new Discord.MessageActionRow().addComponents(btn1, btn2, btn)
+            const rowClear = new Discord.MessageActionRow().addComponents(btn)
 
             await interaction.update({ embeds: [embedEdit], components: [rowClear], fetchReply: true })
             await db.delete(`amount_${interaction.guildId}`)
