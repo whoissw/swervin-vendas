@@ -8,7 +8,6 @@ const { QuickDB } = require('quick.db');
 const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
 const fs = require("fs")
 const axios = require("axios")
-const jimp = require('jimp')
 
 const { promisify } = require('util');
 
@@ -86,6 +85,12 @@ const row = new Discord.MessageActionRow()
                     emoji: "🏷️"
                 },
                 {
+                    label: "Editar Cupom",
+                    value: "editcupom",
+                    description: "Edite um cupom de desconto.",
+                    emoji: "🖍️"
+                },
+                {
                     label: "Deletar Cupom",
                     value: "deletecupom",
                     description: "Delete um cupom de desconto.",
@@ -157,6 +162,163 @@ module.exports = async (client, interaction) => {
      */
 
     if (interaction.isSelectMenu()) {
+
+        if (interaction.values[0] === "editcupom") {
+
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
+                const msgNot = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
+                    .setColor("#2f3136")
+
+                return interaction.reply({ embeds: [msgNot], ephemeral: true })
+            }
+
+            const itens = await Desconto.find({ server_id: interaction.guildId })
+            let itemAtual = itens.find(Boolean);
+
+            if (itens.length < 1) {
+                const embed = new Discord.MessageEmbed()
+
+                    .setColor("#2f3136")
+                    .setDescription(`<:down:1011735481165283441> *Não foi possível encontrar algum cupom de desconto cadastrado.*`)
+
+                await interaction.message.edit({
+                    components: [row],
+                    embeds: [interaction.message.embeds[0]]
+                });
+
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            }
+
+            const rowMenu = new Discord.MessageActionRow()
+                .addComponents(
+                    new Discord.MessageSelectMenu()
+                        .setCustomId('edit_cupom')
+                        .setPlaceholder('Selecione um cupom:')
+                        .addOptions(
+                            itens.map(item => (
+                                {
+                                    label: `Cupom: ${item.code}`,
+                                    emoji: "🏷️",
+                                    value: `ecodigo-${item.code}`
+                                }
+                            ))
+                        )
+                        .addOptions([
+                            {
+                                label: "Voltar menu",
+                                value: "voltarMenu",
+                                description: "Retornar ao menu principal.",
+                                emoji: "⬅️"
+                            }
+                        ])
+                );
+
+            await interaction.update({
+                components: [rowMenu]
+            })
+
+            const coletor = interaction.channel.createMessageComponentCollector({
+                filter: i => ['edit_cupom'].includes(i.customId),
+                idle: 5 * 60 * 1000,
+                max: 1
+            })
+
+            coletor.on("collect", async interaction => {
+
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
+
+                if (interaction.values[0] === "voltarMenu") {
+                    return
+                }
+
+                const [itemId] = interaction.values;
+                const itemEscolhido = itens.find(i => `${i.code}` === itemId);
+
+                itemAtual = itemEscolhido;
+
+                try {
+                    const modal = new Discord.Modal()
+
+                        .setCustomId('cupom')
+                        .setTitle('Crie um cupom de desconto:');
+
+                    const disconto = new Discord.TextInputComponent()
+                        .setCustomId('discontin')
+                        .setLabel('Nome do cumpom de desconto:')
+                        .setRequired(true)
+                        .setMaxLength(15)
+                        .setStyle('SHORT');
+
+                    const porcentagem = new Discord.TextInputComponent()
+                        .setCustomId('porcentin')
+                        .setLabel('Quantos % de desconto:')
+                        .setRequired(true)
+                        .setMaxLength(3)
+                        .setStyle('SHORT')
+
+                    const usos = new Discord.TextInputComponent()
+                        .setCustomId('uso')
+                        .setLabel('Quantidade de usos:')
+                        .setRequired(true)
+                        .setMaxLength(3)
+                        .setStyle('SHORT')
+
+                    modal.addComponents(
+                        new Discord.MessageActionRow().addComponents(disconto),
+                        new Discord.MessageActionRow().addComponents(porcentagem),
+                        new Discord.MessageActionRow().addComponents(usos),
+                    );
+
+                    await interaction.showModal(modal);
+
+                    const modalInteraction = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
+
+                    const porcentos = modalInteraction.fields.getTextInputValue('porcentin');
+                    const qtdusos = modalInteraction.fields.getTextInputValue('uso');
+                    const codiguin = modalInteraction.fields.getTextInputValue('discontin');
+
+                    if (isNaN(porcentos) || isNaN(qtdusos)) {
+
+                        const embed = new Discord.MessageEmbed()
+
+                            .setDescription(`<:down:1011735481165283441> *Você deve inserir uma \`porcentagem/usos\` valídos.*`)
+                            .setColor("#2f3136")
+
+                        await interaction.message.edit({
+                            embeds: [interaction.message.embeds[0]],
+                            components: [row]
+                        })
+
+                        return modalInteraction.reply({ embeds: [embed], ephemeral: true })
+                    }
+
+                    await Desconto.findOneAndUpdate({
+                        server_id: interaction.guildId
+                    }, {
+                        code: codiguin,
+                        descont: porcentos,
+                        usages: qtdusos
+                    })
+
+                    const embed = new Discord.MessageEmbed()
+
+                        .setDescription(`<:up:1011735428136714240> *Código de desconto editado com sucesso!*\n\n*Novo código:* \`${codiguin}\`\n*Nova quantidade de usos:* \`${qtdusos}\`\n*Nova porcentagem de desconto:* \`${porcentos} %\``)
+                        .setColor("#2f3136")
+
+                    await modalInteraction.reply({ embeds: [embed], ephemeral: true })
+                } catch (e) { }
+            })
+        }
 
         if (interaction.values[0] === "addProducts") {
 

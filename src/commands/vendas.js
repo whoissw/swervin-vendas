@@ -90,6 +90,12 @@ module.exports = {
                             emoji: "🏷️"
                         },
                         {
+                            label: "Editar Cupom",
+                            value: "editcupom",
+                            description: "Edite um cupom de desconto.",
+                            emoji: "🖍️"
+                        },
+                        {
                             label: "Deletar Cupom",
                             value: "deletecupom",
                             description: "Delete um cupom de desconto.",
