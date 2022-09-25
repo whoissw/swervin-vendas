@@ -9,7 +9,7 @@ const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
 const fs = require("fs")
 const axios = require("axios")
 
-const { promisify } = require('util');
+const { promisify } = require('util')
 
 const writeFilePromise = promisify(fs.writeFile);
 
