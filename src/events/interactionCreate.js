@@ -250,7 +250,7 @@ module.exports = async (client, interaction) => {
                     const modal = new Discord.Modal()
 
                         .setCustomId('cupom')
-                        .setTitle('Crie um cupom de desconto:');
+                        .setTitle('Edite um cupom de desconto:');
 
                     const disconto = new Discord.TextInputComponent()
                         .setCustomId('discontin')
