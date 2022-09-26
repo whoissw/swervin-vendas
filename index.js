@@ -11,7 +11,7 @@ eventos(client)
 
 client.login(config.token);
 
-/* process.on("multipleResolves", (type, reason, promise) => {
+process.on("multipleResolves", (type, reason, promise) => {
   console.log(`🚨 » [ERRO]\n\n` + type, promise, reason);
 });
 process.on("unhandRejection", (reason, promise) => {
@@ -21,5 +21,5 @@ process.on("uncaughtException", (error, origin) => {
   console.log(`🚨 » [ERRO]\n\n` + error, origin);
 });
 process.on("uncaughtExceptionMonitor", (error, origin) => {
-  console.log(`🚨 » [ERRO] \n\n` + error, origin);
-});  */
+  console.log(`🚨 » [ERRO] \n\n` + error, origin)
+});  
