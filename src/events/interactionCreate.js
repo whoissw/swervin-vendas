@@ -1514,7 +1514,7 @@ module.exports = async (client, interaction) => {
             });
         }
 
-        if (interaction.values[0] === "configbot") {
+        if (interaction.values[0] === "configbot") {    
 
             if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
