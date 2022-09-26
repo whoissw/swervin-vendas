@@ -1514,7 +1514,7 @@ module.exports = async (client, interaction) => {
             });
         }
 
-        if (interaction.values[0] === "configbot") {    
+        if (interaction.values[0] === "configbot") {
 
             if (config.allow.members.indexOf(interaction.user.id) === -1) {
                 const msgNot = new Discord.MessageEmbed()
@@ -1556,23 +1556,17 @@ module.exports = async (client, interaction) => {
                 .setMaxLength(50)
                 .setStyle('SHORT')
 
-            const nameclient = new Discord.TextInputComponent()
-                .setCustomId('nameClient')
-                .setLabel('Alterar o nome do bot:')
+            const channelClient = new Discord.TextInputComponent()
+                .setCustomId('channelsClient')
+                .setLabel('Canal de contagem')
                 .setMaxLength(15)
                 .setStyle('SHORT')
-
-            const imageclient = new Discord.TextInputComponent()
-                .setCustomId('imageClient')
-                .setLabel('Alterar a imagem do bot:')
-                .setStyle('PARAGRAPH')
 
             modal.addComponents(
                 new Discord.MessageActionRow().addComponents(category),
                 new Discord.MessageActionRow().addComponents(role),
                 new Discord.MessageActionRow().addComponents(channel),
-                new Discord.MessageActionRow().addComponents(nameclient),
-                new Discord.MessageActionRow().addComponents(imageclient),
+                new Discord.MessageActionRow().addComponents(channelClient),
             );
 
             await interaction.showModal(modal);
@@ -1587,17 +1581,12 @@ module.exports = async (client, interaction) => {
             const categoriaid = modalInteraction.fields.getTextInputValue('categoria');
             const cargoid = modalInteraction.fields.getTextInputValue('roleId');
             const canalid = modalInteraction.fields.getTextInputValue('channelId');
-            const imagem = modalInteraction.fields.getTextInputValue('imageClient');
-            const nome = modalInteraction.fields.getTextInputValue('nameClient');
+            const counterid = modalInteraction.fields.getTextInputValue('channelsClient');
 
-            await db.set(`category_id${interaction.guildId}`, categoriaid)
-            await db.set(`role_id${interaction.guildId}`, cargoid)
+            await db.set(`category_id${config.serverId}`, categoriaid)
+            await db.set(`role_id${config.serverId}`, cargoid)
             await db.set(`channel_id${config.serverId}`, canalid)
-
-            await client.user.setAvatar(imagem).catch(() => true)
-            await client.user.setUsername(nome).catch(() => true)
-
-            console.log(await db.get(`channel_id${interaction.guildId}`))
+            await db.set(`counter_id${config.serverId}`, counterid)
 
             const embed = new Discord.MessageEmbed()
 
