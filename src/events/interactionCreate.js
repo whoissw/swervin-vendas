@@ -27,88 +27,78 @@ const row = new Discord.MessageActionRow()
                     label: "Adicionar Produto",
                     value: "novo",
                     emoji: "📈"
-                },
-                {
+                }, {
                     label: "Remover Produto",
                     value: "remover",
                     emoji: "📉"
-                },
-                {
+                }, {
                     label: "Adicionar Estoque",
                     value: "aestoque",
                     emoji: "📥"
-                },
-                {
+                }, {
                     label: "Remover Estoque",
                     value: "resotque",
                     emoji: "📤"
-                },
-                {
+                }, {
                     label: "Editar Produto",
                     value: "editarproduto",
                     emoji: "✏️"
-                },
-                {
+                }, {
                     label: "Exibir Produto",
                     description: "Execute o comando na sala para exibir o produto.",
                     value: "eproduto",
                     emoji: "🖼️"
-                },
-                {
+                }, {
                     label: "Adicionar Estoque em Arquivo",
                     value: "addProducts",
                     description: "Adicione estoque via arquivo .txt",
                     emoji: "🗂️"
-                },
-                {
+                }, {
                     label: "Exibir Estoque",
                     value: "exibir_estoque",
                     emoji: "🗃️",
                     description: "Verique todo o estoque de algum produto."
-                },
-                {
+                }, {
                     label: "Gerenciar Vendas",
                     value: "managesales",
                     emoji: "📊",
                     description: "Gerencie a vendas do seu servidor."
-                },
-                {
+                }, {
                     label: "Limpar Estoque",
                     value: "resetestoque",
                     description: "Limpe o estoque de algum produto.",
                     emoji: "🧹"
-                },
-                {
+                }, {
                     label: "Criar Cupom",
                     value: "createcupom",
                     description: "Crie um cupom de desconto.",
                     emoji: "🏷️"
-                },
-                {
+                }, {
                     label: "Editar Cupom",
                     value: "editcupom",
                     description: "Edite um cupom de desconto.",
                     emoji: "🖍️"
-                },
-                {
+                }, {
                     label: "Deletar Cupom",
                     value: "deletecupom",
                     description: "Delete um cupom de desconto.",
                     emoji: "❌"
-                },
-                {
+                }, {
                     label: "Enviar DM",
                     value: "sendm",
                     description: "Envie uma mensagem no privado de um membro.",
                     emoji: "📨"
-                },
-                {
+                }, {
                     label: "Configurar Bot",
                     value: "configbot",
                     description: "Configure o bot antes de realizar as vendas.",
+                    emoji: "⚙️"
+                }, {
+                    label: "Alterar foto/avatar",
+                    value: "changeUser",
+                    description: "Altere a foto e avatar do bot.",
                     emoji: "🤖"
-                },
-                {
+                }, {
                     label: "Deletar Mensagems",
                     value: "cance",
                     emoji: "🗑️"
@@ -162,6 +152,63 @@ module.exports = async (client, interaction) => {
      */
 
     if (interaction.isSelectMenu()) {
+
+        if (interaction.values[0] === "changeUser") {
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
+                const msgNot = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
+                    .setColor("#2f3136")
+
+                return interaction.reply({ embeds: [msgNot], ephemeral: true })
+            }
+
+            const modal = new Discord.Modal()
+
+                .setCustomId('configurar')
+                .setTitle('Alterar foto/avatar do bot');
+
+            const name = new Discord.TextInputComponent()
+                .setCustomId('name')
+                .setLabel('Nome do bot:')
+                .setRequired(true)
+                .setMaxLength(50)
+                .setStyle('SHORT')
+
+            const avatar = new Discord.TextInputComponent()
+                .setCustomId('avatar')
+                .setLabel('Avatar do bot:')
+                .setRequired(true)
+                .setStyle('PARAGRAPH')
+
+            modal.addComponents(
+                new Discord.MessageActionRow().addComponents(name),
+                new Discord.MessageActionRow().addComponents(avatar),
+            );
+
+            await interaction.showModal(modal);
+
+            const modalInteraction = await interaction.awaitModalSubmit({ filter: i => i.user.id === interaction.user.id, time: 120000 });
+
+            const nameClient = modalInteraction.fields.getTextInputValue('name');
+            const avatarClient = modalInteraction.fields.getTextInputValue('avatar');
+
+            await client.user.setAvatar(avatarClient).then(() => true)
+            await client.user.setUsername(nameClient).then(() => true)
+
+            const embed = new Discord.MessageEmbed()
+
+                .setDescription(`*O avatar e nome do bot foram alterado com sucesso.*\n\n***Nome do bot:*** \`${nameClient}\``)
+                .setThumbnail(avatarClient)
+                .setColor("#2f3136")
+
+            await modalInteraction.reply({ embeds: [embed], ephemeral: true })
+        }
 
         if (interaction.values[0] === "editcupom") {
 
@@ -1595,8 +1642,7 @@ module.exports = async (client, interaction) => {
                 *Cargo de cliente:* <@&${cargoid}>
                 *Id da categoria:* \`${categoriaid}\`
                 *Canal de feedback:* <#${canalid}>
-                *Nome do bot:* \`${nome}\``)
-                .setThumbnail(imagem)
+                *Canal de clientes:* <#${counterid}>`)
                 .setColor("#2f3136")
 
             modalInteraction.reply({ embeds: [embed], ephemeral: true })

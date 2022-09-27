@@ -9,10 +9,10 @@ const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
 
 module.exports = async (client) => {
     const guild = client.guilds.cache.get(config.serverId)
-    const roles = guild.roles.cache.get(await db.get(`role_id${config.serverId}`)).members.size
-    const channel = guild.channels.cache.get(await db.get(`counter_id${config.serverId}`))
-
+    
     setInterval(async () => {
+        const roles = guild.roles.cache.get(await db.get(`role_id${config.serverId}`)).members.size
+        const channel = guild.channels.cache.get(await db.get(`counter_id${config.serverId}`))
         await channel.setName(`💰・Clientes: ${roles.toLocaleString()}`)
     }, 5 * 60000)
 }
