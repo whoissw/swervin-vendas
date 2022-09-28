@@ -634,128 +634,6 @@ module.exports = async (client, interaction) => {
             })
         }
 
-        if (interaction.values[0].startsWith("showstock")) {
-
-            if (config.allow.members.indexOf(interaction.user.id) === -1) {
-                const msgNot = new Discord.MessageEmbed()
-
-                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
-                    .setColor("#2f3136")
-
-                await interaction.message.edit({
-                    embeds: [interaction.message.embeds[0]],
-                    components: [row]
-                })
-
-                return interaction.reply({ embeds: [msgNot], ephemeral: true })
-            }
-
-            const product_id = interaction.values[0].split("-")[1]
-
-            const contador = await ProdutoEstoque.countDocuments({
-                produtoId: product_id,
-                server_id: interaction.guildId
-            })
-
-            const stocksArray = await ProdutoEstoque.find({
-                produtoId: product_id
-            })
-
-            const StockName = await Produto.findOne({
-                _id: product_id
-            })
-
-            const stocks = stocksArray.map((stock) => {
-                return `\`\`\`\n📦・${stock.conteudo}\`\`\``
-            })
-
-            const stocks2 = stocksArray.map((stock) => {
-                return `\n${stock.conteudo}`
-            })
-
-            await interaction.message.edit({
-                embeds: [interaction.message.embeds[0]],
-                components: [row]
-            })
-
-            if (stocks.length === 0) {
-                const embed = new Discord.MessageEmbed()
-
-                    .setDescription(`<:down:1011735481165283441> *O produto selecionado não possui estoque*`)
-                    .setColor("#2f3136")
-
-                return interaction.reply({ embeds: [embed], ephemeral: true })
-            }
-
-            const msg = new Discord.MessageEmbed()
-
-                .setDescription(`<a:load:986324092846243880> *O estoque do produto selecionado está sendo verificado...*`)
-                .setColor("#2f3136")
-
-            await interaction.reply({ embeds: [msg], ephemeral: true })
-            await sleep(5000)
-
-            function split(str, index) {
-                const result = [str.slice(0, index), str.slice(index)];
-                return result;
-            }
-
-            const embed = new Discord.MessageEmbed()
-
-                .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
-                .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${stocks.join("\n")}`)
-                .setColor("#2f3136")
-
-            const [first, second] = split(stocks.join("##"), 3850);
-
-            function DeleteFile(name) {
-                fs.unlinkSync(name, (err) => {
-                    if (err) {
-                        return
-                    };
-                })
-            }
-
-            var data = `${stocks2}`
-
-            try {
-                if (second) {
-                    const embed = new Discord.MessageEmbed()
-
-                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
-                        .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${first.replace(/##/g, "\n")}\`\`\``)
-                        .setColor("#2f3136")
-
-                    const embed2 = new Discord.MessageEmbed()
-
-                        .setDescription(`\`\`\`${second.replace(/##/g, "\n")}`)
-                        .setColor("#2f3136")
-
-                    await interaction.editReply({ embeds: [embed, embed2], ephemeral: true })
-                    return
-                }
-            } catch (e) {
-                fs.writeFile("estoque.txt", data, async (err) => {
-                    if (err)
-                        console.log(err);
-                    else {
-                        var atc = fs.readFileSync('./estoque.txt', { "encoding": "utf-8" });
-                        const estoque2 = new Discord.MessageAttachment(Buffer.from(atc), 'estoque.txt')
-                        const embed = new Discord.MessageEmbed()
-
-                            .setDescription(`<:up:1011735428136714240> *O estoque do produto selecionado excedeu o limite maxímo de caracteres e foi criado um arquivo.*`)
-                            .setColor("#2f3136")
-
-                        await interaction.editReply({ files: [estoque2], embeds: [embed] })
-                        DeleteFile("./estoque.txt")
-                    }
-                    return
-                })
-                return
-            }
-            await interaction.editReply({ embeds: [embed], ephemeral: true })
-        }
-
         if (interaction.values[0] === "aestoque") {
 
             if (config.allow.members.indexOf(interaction.user.id) === -1) {
@@ -1943,42 +1821,6 @@ module.exports = async (client, interaction) => {
             })
         }
 
-        if (interaction.values[0].startsWith("codigo")) {
-
-            if (config.allow.members.indexOf(interaction.user.id) === -1) {
-                const msgNot = new Discord.MessageEmbed()
-
-                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
-                    .setColor("#2f3136")
-
-                await interaction.message.edit({
-                    embeds: [interaction.message.embeds[0]],
-                    components: [row]
-                })
-
-                return interaction.reply({ embeds: [msgNot], ephemeral: true })
-            }
-
-            const codiguin = interaction.values[0].split("-")[1]
-
-            await Desconto.findOneAndDelete({
-                server_id: interaction.guildId,
-                code: codiguin
-            })
-
-            await interaction.message.edit({
-                embeds: [interaction.message.embeds[0]],
-                components: [row]
-            })
-
-            const embed = new Discord.MessageEmbed()
-
-                .setDescription(`<:up:1011735428136714240> *O código de desconto foi deletado com sucesso.*`)
-                .setColor("#2f3136")
-
-            await interaction.reply({ embeds: [embed], ephemeral: true })
-        }
-
         if (interaction.values[0] === "sendm") {
 
             if (config.allow.members.indexOf(interaction.user.id) === -1) {
@@ -2363,6 +2205,164 @@ module.exports = async (client, interaction) => {
             }
 
             await client.channels.cache.get(canal).setTopic(`Feedbacks enviados: ${await db.get(`feedbaks_${config.serverId}`)}`)
+        }
+
+        if (interaction.values[0].startsWith("codigo")) {
+
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
+                const msgNot = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
+                    .setColor("#2f3136")
+
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
+
+                return interaction.reply({ embeds: [msgNot], ephemeral: true })
+            }
+
+            const codiguin = interaction.values[0].split("-")[1]
+
+            await Desconto.findOneAndDelete({
+                server_id: interaction.guildId,
+                code: codiguin
+            })
+
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
+            const embed = new Discord.MessageEmbed()
+
+                .setDescription(`<:up:1011735428136714240> *O código de desconto foi deletado com sucesso.*`)
+                .setColor("#2f3136")
+
+            await interaction.reply({ embeds: [embed], ephemeral: true })
+        }
+
+        if (interaction.values[0].startsWith("showstock")) {
+
+            if (config.allow.members.indexOf(interaction.user.id) === -1) {
+                const msgNot = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *Você não possui permissão para usar esta opção.*`)
+                    .setColor("#2f3136")
+
+                await interaction.message.edit({
+                    embeds: [interaction.message.embeds[0]],
+                    components: [row]
+                })
+
+                return interaction.reply({ embeds: [msgNot], ephemeral: true })
+            }
+
+            const product_id = interaction.values[0].split("-")[1]
+
+            const contador = await ProdutoEstoque.countDocuments({
+                produtoId: product_id,
+                server_id: interaction.guildId
+            })
+
+            const stocksArray = await ProdutoEstoque.find({
+                produtoId: product_id
+            })
+
+            const StockName = await Produto.findOne({
+                _id: product_id
+            })
+
+            const stocks = stocksArray.map((stock) => {
+                return `\`\`\`\n📦・${stock.conteudo}\`\`\``
+            })
+
+            const stocks2 = stocksArray.map((stock) => {
+                return `\n${stock.conteudo}`
+            })
+
+            await interaction.message.edit({
+                embeds: [interaction.message.embeds[0]],
+                components: [row]
+            })
+
+            if (stocks.length === 0) {
+                const embed = new Discord.MessageEmbed()
+
+                    .setDescription(`<:down:1011735481165283441> *O produto selecionado não possui estoque*`)
+                    .setColor("#2f3136")
+
+                return interaction.reply({ embeds: [embed], ephemeral: true })
+            }
+
+            const msg = new Discord.MessageEmbed()
+
+                .setDescription(`<a:load:986324092846243880> *O estoque do produto selecionado está sendo verificado...*`)
+                .setColor("#2f3136")
+
+            await interaction.reply({ embeds: [msg], ephemeral: true })
+            await sleep(5000)
+
+            function split(str, index) {
+                const result = [str.slice(0, index), str.slice(index)];
+                return result;
+            }
+
+            const embed = new Discord.MessageEmbed()
+
+                .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${stocks.join("\n")}`)
+                .setColor("#2f3136")
+
+            const [first, second] = split(stocks.join("##"), 3850);
+
+            function DeleteFile(name) {
+                fs.unlinkSync(name, (err) => {
+                    if (err) {
+                        return
+                    };
+                })
+            }
+
+            var data = `${stocks2}`
+
+            try {
+                if (second) {
+                    const embed = new Discord.MessageEmbed()
+
+                        .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+                        .setDescription(`📋・*Produto exibido:* \`${StockName.nome}\`\n📊・*Quantidade em estoque:* \`${contador}\`\n${first.replace(/##/g, "\n")}\`\`\``)
+                        .setColor("#2f3136")
+
+                    const embed2 = new Discord.MessageEmbed()
+
+                        .setDescription(`\`\`\`${second.replace(/##/g, "\n")}`)
+                        .setColor("#2f3136")
+
+                    await interaction.editReply({ embeds: [embed, embed2], ephemeral: true })
+                    return
+                }
+            } catch (e) {
+                fs.writeFile("estoque.txt", data, async (err) => {
+                    if (err)
+                        console.log(err);
+                    else {
+                        var atc = fs.readFileSync('./estoque.txt', { "encoding": "utf-8" });
+                        const estoque2 = new Discord.MessageAttachment(Buffer.from(atc), 'estoque.txt')
+                        const embed = new Discord.MessageEmbed()
+
+                            .setDescription(`<:up:1011735428136714240> *O estoque do produto selecionado excedeu o limite maxímo de caracteres e foi criado um arquivo.*`)
+                            .setColor("#2f3136")
+
+                        await interaction.editReply({ files: [estoque2], embeds: [embed] })
+                        DeleteFile("./estoque.txt")
+                    }
+                    return
+                })
+                return
+            }
+            await interaction.editReply({ embeds: [embed], ephemeral: true })
         }
     }
 
