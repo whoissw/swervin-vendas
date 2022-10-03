@@ -26,7 +26,7 @@ module.exports = {
             .addComponents(
                 new Discord.MessageSelectMenu()
                     .setCustomId('setCustomId')
-                    .setPlaceholder("Selecione a opção:")
+                    .setPlaceholder("➡️ Selecione a opção:")
                     .addOptions([
                         {
                             label: "Adicionar Produto",

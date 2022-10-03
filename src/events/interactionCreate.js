@@ -21,7 +21,7 @@ const row = new Discord.MessageActionRow()
     .addComponents(
         new Discord.MessageSelectMenu()
             .setCustomId('setCustomId')
-            .setPlaceholder("Selecione a opção:")
+            .setPlaceholder("➡️ Selecione a opção:")
             .addOptions([
                 {
                     label: "Adicionar Produto",
@@ -247,7 +247,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edit_cupom')
-                        .setPlaceholder('Selecione um cupom:')
+                        .setPlaceholder('🏷️ Selecione um cupom:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -404,7 +404,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edicao_produtos_menu')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -609,7 +609,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edicao_produtos_menu_add')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -673,7 +673,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edicao_produtos_menu_add')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -871,7 +871,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edicao_produtos_menu')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -1097,7 +1097,7 @@ module.exports = async (client, interaction) => {
             const rowProdutos = new Discord.MessageActionRow().addComponents(
                 new Discord.MessageSelectMenu()
                     .setCustomId('menu_produtos')
-                    .setPlaceholder('Selecionar um produto')
+                    .setPlaceholder('📦 Selecione um produto:')
                     .addOptions(produtos
                         .map(produto => (
                             {
@@ -1232,7 +1232,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('menu_produtos')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(produtos
                             .map(produto => (
                                 {
@@ -1564,7 +1564,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('edicao_produtos_menu_add')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -1791,12 +1791,12 @@ module.exports = async (client, interaction) => {
 
                 return interaction.reply({ embeds: [embed], ephemeral: true });
             }
-
+1
             const rowMenu = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('delete_cupom')
-                        .setPlaceholder('Selecione um cupom:')
+                        .setPlaceholder('🏷️ Selecione um cupom:')
                         .addOptions(
                             itens.map(item => (
                                 {
@@ -1949,7 +1949,7 @@ module.exports = async (client, interaction) => {
                 .addComponents(
                     new Discord.MessageSelectMenu()
                         .setCustomId('menu_produtos')
-                        .setPlaceholder('Selecione um produto:')
+                        .setPlaceholder('📦 Selecione um produto:')
                         .addOptions(itens
                             .map(produto => ({
                                 label: `${produto.nome}`,

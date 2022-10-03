@@ -311,7 +311,37 @@ const gerarPagamento = async (interaction) => {
                                 .setColor("#2f3136")
                                 .setFooter({ text: "🛒 Este canal será deletado dentro de 3 minutos." })
 
-                            interaction.channel.send({ embeds: [channelSend] }).then(async () => {
+                            const avaliacao = new Discord.MessageEmbed()
+
+                                .setDescription(`***Que tal fazer um feedback da sua compra?***
+                            
+                                <a:clique:1016422981892853880> *Para dar um feedback da compra que você realizou clique no menu a baixo e selecione de acordo com o que você achou da sua compra!*`)
+                                .setColor("#2f3136")
+
+                            const row = new Discord.MessageActionRow()
+                                .addComponents(
+                                    new Discord.MessageSelectMenu()
+                                        .setCustomId("avaliacaoCliente")
+                                        .setPlaceholder("De o feedback da sua compra!")
+                                        .setOptions(
+                                            [
+                                                {
+                                                    label: "⭐",
+                                                    value: "starOne"
+                                                },
+                                                {
+                                                    label: "⭐⭐",
+                                                    value: "starTwo"
+                                                },
+                                                {
+                                                    label: "⭐⭐⭐",
+                                                    value: "starThree"
+                                                }
+                                            ]
+                                        )
+                                )
+
+                            interaction.channel.send({ embeds: [channelSend, avaliacao], components: [row] }).then(async () => {
                                 setTimeout(async () => {
                                     await interaction.channel.delete().catch(() => true)
                                 }, 3 * 60000)
