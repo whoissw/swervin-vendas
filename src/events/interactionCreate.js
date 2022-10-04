@@ -1791,7 +1791,7 @@ module.exports = async (client, interaction) => {
 
                 return interaction.reply({ embeds: [embed], ephemeral: true });
             }
-1
+            1
             const rowMenu = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageSelectMenu()
@@ -2971,7 +2971,7 @@ module.exports = async (client, interaction) => {
                 return await interaction.reply({ embeds: [embed], ephemeral: true, components: [row] })
             }
 
-            const categoria = await db.get(`category_id${interaction.guildId}`)
+            const categoria = await db.get(`category_id${config.serverId}`)
 
             if (categoria === null) {
                 const embed = new Discord.MessageEmbed()
