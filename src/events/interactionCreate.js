@@ -476,7 +476,11 @@ module.exports = async (client, interaction) => {
                     const url = c.attachments.first().url;
                     const response = await axios.get(url);
 
+                    /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
+                    const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
+
                     if (response.data) {
+
                         const zero = String(response.data).split("\r\n").length
                         await writeFilePromise(c.attachments.first().name, response.data);
 
@@ -500,9 +504,6 @@ module.exports = async (client, interaction) => {
                             .addField("**📦・Estoque disponível:**", `\`\`${quantidadeTotal}\`\``, true)
                             .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
 
-                        /** @type {{canal_id: String, msg_id: String, server_id: String, produtoId: Number}} */
-                        const msgProduto = await MsgProduto.findOne({ server_id: interaction.guildId, produtoId: itemAtual._id });
-
                         if (!msgProduto) return;
 
                         /** @type {TextChannel} */
@@ -525,8 +526,9 @@ module.exports = async (client, interaction) => {
                             .setColor("#2f3136")
 
                         await interaction.editReply({ embeds: [msg] })
+
+                        DeleteFile(c.attachments.first().name)
                     }
-                    DeleteFile(c.attachments.first().name)
                 })
             })
         }
