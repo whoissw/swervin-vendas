@@ -1,5 +1,5 @@
 const Discord = require('discord.js')
-const { MsgProduto } = require('../models/schemas');
+const { MsgProduto } = require('../database/models/schemas');
 
 /** @typedef {Object} Produto
  * @property {Number} _id

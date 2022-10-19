@@ -1,11 +1,11 @@
 const Discord = require("discord.js")
-const { Produto, MsgProduto, Carrinho, ProdutoEstoque, Desconto } = require('../models/schemas');
+const { Produto, MsgProduto, Carrinho, ProdutoEstoque, Desconto } = require('../database/models/schemas');
 const config = require("../../config.json");
 const { atualizarMsgProduto, atualizarEmbedQtdProduto, gerarEmbedCarrinhoDetalhes, gerarPagamento, criarCarrinho } = require('../functions');
 const mercadopago = require('mercadopago');
 const sleep = require('../utils/sleep')
 const { QuickDB } = require('quick.db');
-const db = new QuickDB({ filePath: "src/sql/json.sqlite" });
+const db = new QuickDB({ filePath: "src/database/sql/json.sqlite" });
 const fs = require("fs")
 const axios = require("axios")
 

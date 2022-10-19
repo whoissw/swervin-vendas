@@ -1,10 +1,8 @@
 const Discord = require('discord.js')
-const { Carrinho } = require('../models/schemas');
+const { Carrinho } = require('../database/models/schemas');
 const { gerarEmbedCarrinhoDetalhes } = require('./generateEmbed');
 const { QuickDB } = require('quick.db');
-const db = new QuickDB({
-    filePath: "src/sql/json.sqlite"
-});
+const db = new QuickDB({ filePath: "src/database/sql/json.sqlite" });
 
 
 /** @param {Discord.ButtonInteraction} interaction */

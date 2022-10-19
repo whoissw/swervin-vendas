@@ -1,6 +1,6 @@
 const colors = require('colors')
 const Discord = require("discord.js")
-const roles = require("../counters/cliente")
+const roles = require("../events/counters/cliente")
 
 /**
  * 

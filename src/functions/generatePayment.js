@@ -1,12 +1,10 @@
 const Discord = require('discord.js')
 const { Buffer } = require('buffer');
-const { Pagamento, Carrinho } = require('../models/schemas');
+const { Pagamento, Carrinho } = require('../database/models/schemas');
 const mercadopago = require('mercadopago');
 const config = require("../../config.json");
 const { QuickDB } = require('quick.db');
-const db = new QuickDB({
-    filePath: "src/sql/json.sqlite"
-});
+const db = new QuickDB({ filePath: "src/database/sql/json.sqlite" });
 
 
 mercadopago.configure({
