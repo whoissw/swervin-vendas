@@ -1,12 +1,11 @@
 {
-  "token": "ODUyNTE2NTE5ODIwNzg3NzEz.YMH94Q.9vX_e5ASezvQ9yhdxd14qmyiHvM",
+  "token": "",
   "prefix": "+",
-  "accessToken": "APP_USR-1885649400723643-061520-71d8ee58279a8ff2d1835f70e35ba5f8-227086984",
-  "mongo_url": "mongodb+srv://Swervin_Testes:Rafa2005@cluster0.o3db1n5.mongodb.net/?retryWrites=true&w=majority",
-  "serverId": "983825325509193779",
+  "accessToken": "",
+  "mongo_url": "",
   "allow": {
     "members": [
-      "761670293575172127"
+      ""
     ]
   }
 }
