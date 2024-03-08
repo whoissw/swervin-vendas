@@ -1,15 +1,13 @@
-const Discord = require('discord.js')
-const { Buffer } = require('buffer');
-const { Pagamento, Carrinho } = require('../database/models/schemas');
-const mercadopago = require('mercadopago');
-const config = require("../../config.json");
-const { QuickDB } = require('quick.db');
-const db = new QuickDB({ filePath: "src/database/sql/json.sqlite" });
+const { Buffer } = require("buffer")
+const Discord = require("discord.js")
+const { QuickDB } = require("quick.db")
+const MecardoPago = require("mercadopago")
+const config = require("../../config.json")
+const db = new QuickDB({ filePath: "src/database/sql/json.sqlite" })
+const { Pagamento, Carrinho } = require("../database/models/schemas")
 
 
-mercadopago.configure({
-    access_token: config.accessToken
-});
+new MecardoPago.MercadoPagoConfig({ accessToken: config.MercadoPago })
 
 /** @typedef {Object} ProdutoCarrinho
  * @property {String} msg_produto_id
@@ -29,6 +27,7 @@ mercadopago.configure({
 /**
  * @param {Discord.ButtonInteraction} interaction
  */
+
 const gerarPagamento = async (interaction) => {
 
     try {
@@ -65,7 +64,7 @@ const gerarPagamento = async (interaction) => {
         }
 
         const nomesProdutos = [...new Set(carrinhoDados.produtos
-            .map(p => p.produto_nome))].join('\n');
+            .map(p => p.produto_nome))].join("\n");
 
         let conteudoProdutos = carrinhoDados.produtos
             .sort((a, b) => a.produto_id - b.produto_id)
@@ -75,17 +74,17 @@ const gerarPagamento = async (interaction) => {
 
         aguardandoPagamentoRow.components[0]
 
-            .setLabel('Aguardando pagamento')
-            .setEmoji('🔄')
-            .setStyle('SECONDARY')
+            .setLabel("Aguardando pagamento")
+            .setEmoji("🔄")
+            .setStyle("SECONDARY")
             .setDisabled(true);
 
         aguardandoPagamentoRow.components[2]
 
-            .setLabel('Adicionar cupom')
-            .setEmoji('🏷️')
-            .setStyle('SECONDARY')
-            .setCustomId('utilizar-cupom')
+            .setLabel("Adicionar cupom")
+            .setEmoji("🏷️")
+            .setStyle("SECONDARY")
+            .setCustomId("utilizar-cupom")
             .setDisabled(true);
 
         await interaction.update({ components: [aguardandoPagamentoRow] });
@@ -99,28 +98,28 @@ const gerarPagamento = async (interaction) => {
 
         const msgsApagar = [];
 
-        const email = 'systemsales@swervin.com';
+        const email = "systemsales@swervin.com";
 
         const payment_data = {
             transaction_amount: valor - descont,
             description: nomesProdutos,
-            payment_method_id: 'pix',
+            payment_method_id: "pix",
             payer: {
                 email,
                 first_name: `${interaction.user} (${interaction.user.id})`,
             }
         };
 
-        const data = await mercadopago.payment.create(payment_data);
+        const data = await MecardoPago.payment.create(payment_data);
         const base64_img = data.body.point_of_interaction.transaction_data.qr_code_base64;
 
-        const buf = Buffer.from(base64_img, 'base64');
-        const attachment = new Discord.MessageAttachment(buf, 'qrcode.png');
+        const buf = Buffer.from(base64_img, "base64");
+        const attachment = new Discord.MessageAttachment(buf, "qrcode.png");
 
         const embedQR = new Discord.MessageEmbed()
             .setColor("#2f3136")
             .setDescription(`💵 • *O **QRCODE** gerado no valor de: \`R$${payment_data.transaction_amount}\`\n\n📱 • Aponte a câmera do seu celular para realizar o pagamento.\n✏️ • Caso prefira clique no botão a baixo e receba o código **COPIA e COLA**.*`)
-            .setImage('attachment://qrcode.png')
+            .setImage("attachment://qrcode.png")
             .setFooter({ text: "Ao realizar o pagamento aguarde a aprovação do sistema.", iconURL: "https://cdn.discordapp.com/attachments/970045333893685298/1008489927736053780/emoji.png" })
 
         await Pagamento.create({
@@ -133,10 +132,10 @@ const gerarPagamento = async (interaction) => {
         const rowCopiaCola = new Discord.MessageActionRow()
             .addComponents(
                 new Discord.MessageButton()
-                    .setLabel('Código cópia e cola')
-                    .setEmoji('🔗')
-                    .setStyle('SECONDARY')
-                    .setCustomId('botao_copia_cola')
+                    .setLabel("Código cópia e cola")
+                    .setEmoji("🔗")
+                    .setStyle("SECONDARY")
+                    .setCustomId("botao_copia_cola")
             );
 
         interaction.followUp({
@@ -147,12 +146,12 @@ const gerarPagamento = async (interaction) => {
         }).then(m => msgsApagar.push(m.id));
 
         const coletorCopiaCola = interaction.channel.createMessageComponentCollector({
-            componentType: 'BUTTON',
+            componentType: "BUTTON",
             time: 10 * 60 * 1000,
-            filter: i => i.user.id === interaction.user.id && i.customId === 'botao_copia_cola',
+            filter: i => i.user.id === interaction.user.id && i.customId === "botao_copia_cola",
         });
 
-        coletorCopiaCola.on('collect', async i => {
+        coletorCopiaCola.on("collect", async i => {
 
             const embed = new Discord.MessageEmbed()
 
@@ -173,20 +172,20 @@ const gerarPagamento = async (interaction) => {
 
             tentativas++;
 
-            const res = await mercadopago.payment.get(data.body.id);
+            const res = await MecardoPago.payment.get(data.body.id);
             const pagamentoStatus = res.body.status;
 
-            if (tentativas >= 15 || pagamentoStatus === 'approved') {
+            if (tentativas >= 15 || pagamentoStatus === "approved") {
 
                 clearInterval(interval);
 
-                if (pagamentoStatus === 'approved') {
+                if (pagamentoStatus === "approved") {
 
                     aguardandoPagamentoRow.components[0]
 
-                        .setStyle('SECONDARY')
-                        .setEmoji('✅')
-                        .setLabel('Pagamento Aprovado');
+                        .setStyle("SECONDARY")
+                        .setEmoji("✅")
+                        .setLabel("Pagamento Aprovado");
 
                     aguardandoPagamentoRow.components.splice(1, 2);
 
@@ -229,7 +228,7 @@ const gerarPagamento = async (interaction) => {
                         🆔 **ID do pagamento:** \`${Number(data.body.id)}\`
                         ⏰ **Horário da compra:** <t:${~~(Date.now(1) / 1000)}:f>
 
-                        📦 **Produto entregue:** ${conteudoProdutos.join('\n')}`)
+                        📦 **Produto entregue:** ${conteudoProdutos.join("\n")}`)
 
                     await interaction.guild.channels.cache.find(channels => channels.name === "log-compras").send({ embeds: [embed] })
 
@@ -244,7 +243,7 @@ const gerarPagamento = async (interaction) => {
                         valor: valor - descont,
                     });
 
-                    const tamanhoConteudo = conteudoProdutos.join('\n').length;
+                    const tamanhoConteudo = conteudoProdutos.join("\n").length;
 
                     if (tamanhoConteudo < 2000) {
 
@@ -256,7 +255,7 @@ const gerarPagamento = async (interaction) => {
                             • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
                             • *O ID da sua compra é este:* \`${Number(data.body.id)}\`
                             
-                            ${conteudoProdutos.join('\n')}`)
+                            ${conteudoProdutos.join("\n")}`)
                             .setColor("#2f3136")
                             .setFooter({ text: "❗Caso ocorra algum problema abra um ticket." })
 
@@ -305,7 +304,7 @@ const gerarPagamento = async (interaction) => {
                                 • *O seu pagamento foi aprovado com sucesso, o seu produto segue a baixo:*
                                 • *O ID da sua compra é este:* \`${Number(data.body.id)}\`
                             
-                                ${conteudoProdutos.join('\n')}`)
+                                ${conteudoProdutos.join("\n")}`)
                                 .setColor("#2f3136")
                                 .setFooter({ text: "🛒 Este canal será deletado dentro de 3 minutos." })
 
@@ -357,8 +356,8 @@ const gerarPagamento = async (interaction) => {
                         conteudoProdutos.slice(conteudoProdutos.length / 2)
                     ];
 
-                    await interaction.channel.send(conteudoSeparadoP1.join('\n'));
-                    interaction.channel.send(conteudoSeparadoP2.join('\n')).then(async () => {
+                    await interaction.channel.send(conteudoSeparadoP1.join("\n"));
+                    interaction.channel.send(conteudoSeparadoP2.join("\n")).then(async () => {
 
                         await Carrinho.deleteOne({ server_id: interaction.guildId, user_id: interaction.member.id });
 
@@ -370,7 +369,7 @@ const gerarPagamento = async (interaction) => {
 
                         await interaction.reply({ embeds: [embed], ephemeral: true })
                     });
-                } else if (pagamentoStatus !== 'approved') {
+                } else if (pagamentoStatus !== "approved") {
                     const embed = new Discord.MessageEmbed()
 
                         .setDescription(`<:ajuda:986323734551994428> *O seu produto não foi entregue ainda? Abra um **TICKET** e envie o comprovante de pagamento e aguarde a resposta da staff.*`)
